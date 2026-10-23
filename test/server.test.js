@@ -1,3 +1,4 @@
+import {costVisibleState} from '../src/costing.js';
 import {DatabaseSync} from 'node:sqlite';
 import {spawn} from 'node:child_process';
 import {test} from 'node:test';
@@ -30,7 +31,7 @@ test('HTTP two devices, idempotent retry, stale move, persisted restart and API 
   assert.equal((await fetch(base+'/api/commands',{method:'POST',headers:{'Content-Type':'application/json','Origin':'https://evil.example'},body:'{}'})).status,403);
   assert.equal((await fetch(base+'/api/commands',{method:'POST',headers:{'Content-Type':'application/json'},body:'{'})).status,400);
   assert.equal((await post({id:'staff-refund',type:'refund',payload:{session_id:s.session_id,reason:'test',amountSatang:100},expectedRevision:state.revision})).status,403);
-  const before=structuredClone(state);await new Promise(resolve=>server.close(resolve));store.close();store=new DemoStore(path);assert.deepEqual(store.read(),before);
+  const before=structuredClone(state);await new Promise(resolve=>server.close(resolve));store.close();store=new DemoStore(path);assert.deepEqual(costVisibleState(store.read()),before);
  }finally{if(server.listening)await new Promise(resolve=>server.close(resolve));store.close();await rm(directory,{recursive:true,force:true});}
 });
 test('independent SQLite connections enforce fresh revision within transaction',async()=>{

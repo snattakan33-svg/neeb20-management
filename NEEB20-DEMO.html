@@ -9,10 +9,10 @@ select{font:inherit;min-height:48px;max-width:100%;border:1px solid #adbfb3;bord
 </style></head>
 <body><header><div><strong>หนีบ<span>20</span></strong><p>NEEB20 MANAGEMENT · SESSION BILL DEMO</p></div><button id="export" class="secondary">สำรองข้อมูลทดสอบ</button></header>
 <aside class="notice">โหมดทดสอบเท่านั้น · ไม่รับเงินจริง · สต๊อกจำลอง · พนักงานเปิด–ปิดไฟด้วยมือ</aside>
-<nav class="main-nav"><a href="#stations-menu">Station 12 จุด</a><a href="#pos-menu">POS</a><a href="#income-menu">สรุปรายได้ / กระทบยอด / ปิดกะ</a><a href="#shift-menu">ส่งยอดปิดกะ</a></nav><main><div class="operator"><label>ผู้ดำเนินการทดสอบ<select id="actor"></select></label><p id="mode"></p><p>การเลือกชื่อ/บทบาทนี้เป็นการจำลองสิทธิ์ ไม่ใช่การเข้าสู่ระบบ ห้ามใช้รับเงินจริง</p></div><div id="message" role="status" aria-live="polite"></div><section id="stations-menu"><div class="section-head"><div><h1>พื้นที่บริการ</h1><p>20 บาท / 25 นาที · ต่อเวลา 5 บาท / 5 นาที</p></div><span id="summary"></span></div><p>สีเหลือง: เหลือไม่เกิน 5 นาที · สีแดง: หมดเวลา รอพนักงานยืนยันจบคิว</p><div id="stations" class="stations"></div></section>
+<nav class="main-nav"><a href="#stations-menu">Station 12 จุด</a><a href="#pos-menu">POS</a><a href="#income-menu">สรุปรายได้ / กระทบยอด / ปิดกะ</a><a href="#cost-menu">ต้นทุน / กำไร</a><a href="#shift-menu">ส่งยอดปิดกะ</a></nav><main><div class="operator"><label>ผู้ดำเนินการทดสอบ<select id="actor"></select></label><p id="mode"></p><p>การเลือกชื่อ/บทบาทนี้เป็นการจำลองสิทธิ์ ไม่ใช่การเข้าสู่ระบบ ห้ามใช้รับเงินจริง</p></div><div id="message" role="status" aria-live="polite"></div><section id="stations-menu"><div class="section-head"><div><h1>พื้นที่บริการ</h1><p id="service-pricing">20 บาท / 25 นาที · ต่อเวลา 5 บาท / 5 นาที</p></div><span id="summary"></span></div><p>สีเหลือง: เหลือไม่เกิน 5 นาที · สีแดง: หมดเวลา รอพนักงานยืนยันจบคิว</p><div id="stations" class="stations"></div></section>
 <section class="pos" id="pos-menu"><div><h2>POS · สินค้าทดสอบ</h2><p>เริ่มคิวเปิดบิลค้างชำระ · เพิ่มสินค้าในบิล Station ผ่านปุ่มเพิ่มสินค้า · POS ส่วนนี้สำหรับขายแยก</p><label>ค้นหาชื่อ / สแกนบาร์โค้ด (เครื่องที่ส่งค่าแบบแป้นพิมพ์)<input id="search" type="search" placeholder="ชื่อหรือบาร์โค้ด"></label><div id="products"></div><details><summary>เพิ่มสินค้าทดสอบ</summary><form id="product-form"><label>รหัสสินค้า<input name="sku" required maxlength="64"></label><label>หมวดหมู่<input name="category" required maxlength="80"></label><label>ชื่อสินค้า<input name="name" required maxlength="100"></label><label>บาร์โค้ด (ถ้ามี)<input name="barcode" maxlength="80"></label><div class="fields"><label>ทุน (บาท)<input name="cost" type="number" min="0" step="0.01" required></label><label>ขาย (บาท)<input name="price" type="number" min="0.01" step="0.01" required></label><label>สต๊อกทดสอบ<input name="stock" type="number" min="0" step="1" required></label></div><button>เพิ่มสินค้า</button></form></details></div>
 <div class="bill"><h2>บิลทดสอบ</h2><div id="cart"></div><div class="total">รวม <strong id="total"></strong></div><button id="checkout">ยืนยันบิลทดสอบ · ไม่รับเงินจริง</button><div id="receipt" aria-live="polite"></div></div></section><section><details><summary>ประวัติสต๊อกล่าสุด 50 รายการ</summary><div id="inventory-log"></div></details><details><summary>รายการขายสินค้า / คืนสินค้า (ล่าสุด 30 รายการ; ใช้รายงานและสำรองข้อมูลเพื่อดูทั้งหมด)</summary><div id="sales-history"></div></details></section>
-<section class="records"><h2>รายการคิวและคำขออนุมัติ</h2><p>ประวัติไม่ถูกลบ · ผู้จัดการทดสอบอนุมัติยกเลิก กู้คืน และคืนเงินได้</p><div id="sessions"></div><h2>ยอดธุรกรรมทดสอบสะสม</h2><p id="financial-summary"></p><p>ยอดนี้รวมเฉพาะธุรกรรมรับ/คืนเงินทดสอบ ไม่ได้นับจากจำนวนครั้งที่จบคิว</p><details><summary>Audit Log ล่าสุด 50 เหตุการณ์ (สำรองข้อมูลเพื่อดูทั้งหมด)</summary><div id="audit"></div></details><p id="legacy"></p></section><section class="records" id="income-menu"><h2>สรุปรายได้ / กระทบยอด / ปิดกะ · ข้อมูลทดสอบ</h2><div id="report-controls" class="report-controls"><label>รูปแบบ<select id="report-mode"><option value="daily">รายวัน</option><option value="weekly">รายสัปดาห์</option><option value="monthly">รายเดือน</option><option value="all">ย้อนหลังทั้งหมด</option><option value="range">ช่วงวันที่</option></select></label><label>วัน<input id="report-day" type="date"></label><label>สัปดาห์<input id="report-week" type="week"></label><label>เดือน<input id="report-month" type="month"></label><label>จาก<input id="report-from" type="date"></label><label>ถึง<input id="report-to" type="date"></label><label>พนักงานผู้ทำรายการ<select id="report-employee"></select></label></div><p id="report-error" role="alert"></p><button id="export-summary" class="secondary">สรุปรายได้ / รายพนักงาน CSV</button><button id="export-csv" class="secondary">ดาวน์โหลดธุรกรรม CSV (ข้อมูลทดสอบ)</button><button id="export-bills-csv" class="secondary">ดาวน์โหลดรายงานบิล CSV</button><div id="report-summary"></div><label>กราฟรายได้สุทธิ<select id="chart-group"><option value="daily">ตามวัน</option><option value="weekly">ตามสัปดาห์</option><option value="monthly">ตามเดือน</option></select></label><div id="income-chart"></div><details><summary>รายงานรายพนักงานผู้ทำรายการเงิน</summary><div id="employee-report"></div></details><details><summary>รายงานบิล PAID / UNPAID / CANCELLED / REFUNDED</summary><div id="report-bills"></div></details><p id="report-refunds"></p><details><summary>Session ที่เริ่มในช่วงวันที่ · เวลาและการย้ายจุด</summary><div id="report-sessions"></div></details><details><summary>ประวัติธุรกรรมในช่วงวันที่ · รวมรายการคืนเงิน</summary><div id="report-transactions"></div></details></section><section class="records" id="shift-menu"><h2>กระทบยอด / ปิดกะ · ลิ้นชักกลาง</h2><p>เงินทอนและเติม/นำออกไม่ใช่รายได้ QR ยืนยันรับโดยพนักงานแยกจากยอดตรวจบัญชีจริง</p><div class="actions"><button id="open-shift">เปิดกะ</button><button id="historical-shift" class="secondary">ผู้จัดการสร้างกะย้อนหลัง</button><button id="export-shifts" class="secondary">ส่งออกกะ CSV</button><button id="print-report" class="secondary">พิมพ์รายงาน</button></div><div id="active-shift"></div><h3>กะตามช่วงวันที่/พนักงานที่เลือกในสรุปรายได้</h3><div id="shift-list"></div><div id="unassigned"></div><details><summary>ตรวจสอบความผิดปกติ / รายการต้องตรวจ</summary><div id="anomalies"></div></details></section><footer>รุ่นต้นแบบ · ดูโหมดจัดเก็บที่ด้านบน · ทุกข้อมูลเป็นข้อมูลทดสอบ<br>สระ100 · พนักงานจริง · ค่าคอมมิชชัน · อุปกรณ์หน้าร้าน: อยู่ในแผนพัฒนาถัดไป</footer></main><dialog id="confirm-dialog"><form id="confirm-form"><h2 id="dialog-title"></h2><div id="dialog-body"></div><p id="dialog-error" role="alert"></p><div class="actions"><button type="button" id="cancel-dialog" class="secondary">ยกเลิก</button><button id="confirm-command" type="submit">ยืนยัน</button></div></form></dialog><script type="module">
+<section class="records"><h2>รายการคิวและคำขออนุมัติ</h2><p>ประวัติไม่ถูกลบ · ผู้จัดการทดสอบอนุมัติยกเลิก กู้คืน และคืนเงินได้</p><div id="sessions"></div><h2>ยอดธุรกรรมทดสอบสะสม</h2><p id="financial-summary"></p><p>ยอดนี้รวมเฉพาะธุรกรรมรับ/คืนเงินทดสอบ ไม่ได้นับจากจำนวนครั้งที่จบคิว</p><details><summary>Audit Log ล่าสุด 50 เหตุการณ์ (สำรองข้อมูลเพื่อดูทั้งหมด)</summary><div id="audit"></div></details><p id="legacy"></p></section><section class="records" id="income-menu"><h2>สรุปรายได้ / กระทบยอด / ปิดกะ · ข้อมูลทดสอบ</h2><div id="report-controls" class="report-controls"><label>รูปแบบ<select id="report-mode"><option value="daily">รายวัน</option><option value="weekly">รายสัปดาห์</option><option value="monthly">รายเดือน</option><option value="all">ย้อนหลังทั้งหมด</option><option value="range">ช่วงวันที่</option></select></label><label>วัน<input id="report-day" type="date"></label><label>สัปดาห์<input id="report-week" type="week"></label><label>เดือน<input id="report-month" type="month"></label><label>จาก<input id="report-from" type="date"></label><label>ถึง<input id="report-to" type="date"></label><label>พนักงานผู้ทำรายการ<select id="report-employee"></select></label></div><p id="report-error" role="alert"></p><button id="export-summary" class="secondary">สรุปรายได้ / รายพนักงาน CSV</button><button id="export-csv" class="secondary">ดาวน์โหลดธุรกรรม CSV (ข้อมูลทดสอบ)</button><button id="export-bills-csv" class="secondary">ดาวน์โหลดรายงานบิล CSV</button><div id="report-summary"></div><label>กราฟรายได้สุทธิ<select id="chart-group"><option value="daily">ตามวัน</option><option value="weekly">ตามสัปดาห์</option><option value="monthly">ตามเดือน</option></select></label><div id="income-chart"></div><details><summary>รายงานรายพนักงานผู้ทำรายการเงิน</summary><div id="employee-report"></div></details><details><summary>รายงานบิล PAID / UNPAID / CANCELLED / REFUNDED</summary><div id="report-bills"></div></details><p id="report-refunds"></p><details><summary>Session ที่เริ่มในช่วงวันที่ · เวลาและการย้ายจุด</summary><div id="report-sessions"></div></details><details><summary>ประวัติธุรกรรมในช่วงวันที่ · รวมรายการคืนเงิน</summary><div id="report-transactions"></div></details></section><section class="records" id="shift-menu"><h2>กระทบยอด / ปิดกะ · ลิ้นชักกลาง</h2><p>เงินทอนและเติม/นำออกไม่ใช่รายได้ QR ยืนยันรับโดยพนักงานแยกจากยอดตรวจบัญชีจริง</p><div class="actions"><button id="open-shift">เปิดกะ</button><button id="historical-shift" class="secondary">ผู้จัดการสร้างกะย้อนหลัง</button><button id="export-shifts" class="secondary">ส่งออกกะ CSV</button><button id="print-report" class="secondary">พิมพ์รายงาน</button></div><div id="active-shift"></div><h3>กะตามช่วงวันที่/พนักงานที่เลือกในสรุปรายได้</h3><div id="shift-list"></div><div id="unassigned"></div><details><summary>ตรวจสอบความผิดปกติ / รายการต้องตรวจ</summary><div id="anomalies"></div></details></section><section class="records" id="cost-menu" hidden><h2>ต้นทุนสินค้าและบริการ · ผู้จัดการ · ข้อมูลทดสอบ</h2><p>สินค้าแก้ต้นทุนใน POS ด้านบน กำไรขั้นต้นไม่ใช่กำไรสุทธิ ค่าเช่า/เงินเดือนประจำ/ค่าใช้จ่ายดำเนินงานแยกโครงสร้างไว้ ยังไม่หักในรายงานนี้ ต้นทุนบริการเริ่มต้นยังไม่ได้กำหนด ห้ามถือเป็นศูนย์</p><div id="services-cost"></div><h3>ต้นทุนบริการจริง / ค่าคอมจริง</h3><select id="service-actuals"></select><button id="record-service-cost">บันทึกต้นทุนจริงหรือค่าคอมจริง</button><p>ค่าคอมจริงแทนส่วนประมาณการที่รวมในค่าแรง รายงานงวดขายเดิมจะปรับตามต้นทุนจริงล่าสุด ธุรกรรมเดิมไม่ถูกแก้ไข คืนเงินไม่ย้อนต้นทุนที่เกิดแล้วอัตโนมัติ ต้องระบุต้นทุนจริงพร้อมเหตุผล</p><details><summary>ประวัติราคาและต้นทุน / ผู้แก้ไข / เวลา (มิลลิวินาที UTC)</summary><pre id="catalog-cost-history"></pre></details></section><section class="records" id="profit-menu" hidden><h2>รายงานกำไรขั้นต้น · ข้อมูลทดสอบ</h2><p>ใช้วัน/สัปดาห์/เดือน/ช่วงวันที่/พนักงานจากเมนูสรุปรายได้ คืนสินค้าที่กลับเข้าสต๊อกจึงย้อนต้นทุนสินค้า คืนเงินโดยไม่คืนสินค้าไม่ย้อนต้นทุน</p><button id="export-profit">ส่งออกกำไร CSV</button><div id="profit-summary"></div><details><summary>ต้นทุนและกำไรต่อรายการขาย/คืนเงิน (หน่วยสตางค์)</summary><pre id="profit-details"></pre></details></section><footer>รุ่นต้นแบบ · ดูโหมดจัดเก็บที่ด้านบน · ทุกข้อมูลเป็นข้อมูลทดสอบ<br>จองสระ100 · พนักงานจริง · ระบบจ่ายค่าคอม · อุปกรณ์หน้าร้าน: อยู่ในแผนพัฒนาถัดไป</footer></main><dialog id="confirm-dialog"><form id="confirm-form"><h2 id="dialog-title"></h2><div id="dialog-body"></div><p id="dialog-error" role="alert"></p><div class="actions"><button type="button" id="cancel-dialog" class="secondary">ยกเลิก</button><button id="confirm-command" type="submit">ยืนยัน</button></div></form></dialog><script type="module">
 const NEEB20_STANDALONE = true;
 // One shared cash drawer; sequential shifts. Financial records remain immutable.
 function shiftInvalid(message,code='INVALID'){const e=new Error(message);e.code=code;throw e;}
@@ -104,6 +104,56 @@ function validateShifts(state){
  for(const s of state.shifts){if(ids.has(s.id))shiftInvalid('รหัสกะซ้ำ');ids.add(s.id);for(const id of s.transaction_ids){if(!txIds.has(id)||assigned.has(id))shiftInvalid('รายการเงินถูกนับซ้ำระหว่างกะ');assigned.add(id);}if(s.status==='APPROVED'&&(!s.approvedSnapshot||!s.approvedBy))shiftInvalid('ข้อมูลอนุมัติกะไม่ครบ');}
 }
 
+// Integer satang only. Commission is a component of labor, never an extra deduction twice.
+const COST_FIELDS=['materialsSatang','electricitySatang','waterSatang','laborSatang','otherSatang'];
+function costError(message,code='INVALID'){const e=new Error(message);e.code=code;throw e;}
+function requireCostManager(state,actorId){if(state.employees.find(e=>e.id===actorId)?.role!=='manager')costError('ต้นทุนและกำไรสำหรับผู้จัดการเท่านั้น','FORBIDDEN');}
+function validServiceCost(cost){
+ if(!cost||!COST_FIELDS.every(k=>Number.isSafeInteger(cost[k])&&cost[k]>=0&&cost[k]<=100000000)||!Number.isSafeInteger(cost.commissionIncludedSatang)||cost.commissionIncludedSatang<0||cost.commissionIncludedSatang>cost.laborSatang)costError('ต้นทุนไม่ถูกต้อง ค่าคอมที่รวมแล้วต้องไม่เกินค่าแรง');return structuredClone(cost);
+}
+function estimatedCost(snapshot){return COST_FIELDS.reduce((n,k)=>n+snapshot[k],0);}
+function ensureCostState(state){
+ state.services ||= [{id:'base',name:'ค่าบริการหนีบ20',priceSatang:2000},{id:'extension',name:'ต่อเวลา 5 นาที',priceSatang:500},{id:'wash100',name:'บริการสระ100',priceSatang:10000}].map(s=>({...s,cost:null}));
+ state.costAdjustments ||= [];state.catalogHistory ||= [];state.operatingExpenses ||= [];state.operatingExpenseCategories ||= ['rent','fixedSalary','other'];state.costSchema=1;return state;
+}
+function serviceCharge(state,kind,at,id){const s=state.services.find(s=>s.id===kind);if(!s)costError('ไม่พบบริการ');return {id,kind,name:s.name,service_id:s.id,amountSatang:s.priceSatang,at,costSnapshot:s.cost?{...structuredClone(s.cost),capturedAt:at,basis:'estimated-service-time'}:null};}
+function applyCostCommand(state,command,actor,now,{newId,log}){
+ const p=command.payload||{};
+ if(!['editService','recordServiceCost'].includes(command.type))return false;
+ requireCostManager(state,actor.id);
+ if(command.type==='editService'){
+  const s=state.services.find(s=>s.id===p.service_id);if(!s||!Number.isSafeInteger(p.priceSatang)||p.priceSatang<=0||p.priceSatang>100000000)costError('บริการหรือราคาขายไม่ถูกต้อง');
+  const before=structuredClone(s);s.cost=validServiceCost(p.cost);s.priceSatang=p.priceSatang;
+  const event=log('editService',null,before,s);state.catalogHistory.push(structuredClone(event));
+ }else{
+  const bill=state.bills.find(b=>b.id===p.bill_id),line=bill?.charges.find(l=>l.id===p.charge_id&&l.kind!=='product'&&!l.voided);
+  if(!line||typeof p.reason!=='string'||!p.reason.trim()||p.reason.length>500)costError('ต้องเลือกรายการบริการและระบุเหตุผล');
+  if(p.actualCommissionSatang!==null&&(!Number.isSafeInteger(p.actualCommissionSatang)||p.actualCommissionSatang<0||p.actualCommissionSatang>100000000))costError('ค่าคอมจริงไม่ถูกต้อง');
+  // Actual incurred cost permits zero for an unused cancellation. This is explicit, never automatic on refunds.
+  const actualCost=p.actualCost===null?null:validServiceCost(p.actualCost);
+  if(!actualCost&&p.actualCommissionSatang===null)costError('ระบุต้นทุนจริงหรือค่าคอมจริง');
+  const entry={id:newId(),bill_id:bill.id,charge_id:line.id,actualCost,actualCommissionSatang:p.actualCommissionSatang,at:now,employee_id:actor.id,reason:p.reason.trim(),command_id:command.id};
+  state.costAdjustments.push(entry);log('recordServiceCost',state.sessions.find(s=>s.bill_id===bill.id),null,entry,entry.reason);
+ }
+ return true;
+}
+function serviceCostFor(state,line,billId){
+ const adjustments=(state.costAdjustments||[]).filter(a=>a.bill_id===billId&&a.charge_id===line.id);
+ const actual=adjustments.filter(a=>a.actualCost!==null).at(-1),commission=adjustments.filter(a=>a.actualCommissionSatang!==null).at(-1);
+ const snapshot=actual?.actualCost||line.costSnapshot;if(!snapshot)return {costSatang:null,estimated:true};
+ return {costSatang:estimatedCost(snapshot)-(commission?snapshot.commissionIncludedSatang:0)+(commission?.actualCommissionSatang||0),estimated:!actual,commissionActual:commission?.actualCommissionSatang??null};
+}
+// Demo identity selection is NOT authentication. Strip all sensitive historical copies too.
+function costVisibleState(state,actorId='staff-01'){
+ if(!state.employees.some(e=>e.id===actorId))costError('ไม่พบพนักงาน','FORBIDDEN');
+ if(state.employees.find(e=>e.id===actorId).role==='manager')return state;
+ const redact=value=>{
+  if(Array.isArray(value))return value.map(redact);
+  if(value&&typeof value==='object')return Object.fromEntries(Object.entries(value).filter(([k])=>!/(cost|commission|profit|catalogHistory|schemaArchives|legacyArchive|fingerprint|operatingExpense)/i.test(k)).map(([k,v])=>[k,redact(v)]));
+  return value;
+ };return redact(state);
+}
+
 const STORAGE_KEY = 'neeb20:demo:v5';
 const PREVIOUS_KEY = 'neeb20:demo:v4';
 const OLDER_KEY = 'neeb20:demo:v3';
@@ -114,7 +164,7 @@ function createDemo() {
   const state={version:5,demo:true,shifts:[],shiftControl:{enabled:false},revision:0,stations:Array.from({length:12},(_,i)=>({id:i+1,session_id:null})),sessions:[],bills:[],transactions:[],audit:[],commands:[],
     employees:[{id:'staff-01',name:'พนักงานทดสอบ 01',role:'staff'},{id:'manager-01',name:'ผู้จัดการทดสอบ 01',role:'manager'}],
     stockMovements:[],products:[{id:'p1',sku:'DEMO001',category:'อุปกรณ์',active:true,name:'หวีทดสอบ',barcode:'885000000001',cost:15,price:29,stock:20},{id:'p2',sku:'DEMO002',category:'ดูแลผม',active:true,name:'เซรั่มทดสอบ',barcode:'885000000002',cost:45,price:79,stock:10}],cart:[],receipts:[]};
-  state.stockMovements=openingMovements(state.products,0,'ยอดตัวอย่างเริ่มต้น — ไม่ใช่สต๊อกจริง');return state;
+  ensureCostState(state);state.stockMovements=openingMovements(state.products,0,'ยอดตัวอย่างเริ่มต้น — ไม่ใช่สต๊อกจริง');return state;
 }
 function openingMovements(products,at,reason){return products.map(p=>({id:newId(),product_id:p.id,quantityDelta:p.stock,before:0,after:p.stock,kind:'opening',reason,at,employee_id:'system-demo',command_id:'opening',transaction_id:null}));}
 function fail(message,code='INVALID') { const e=new Error(message);e.code=code;throw e; }
@@ -161,7 +211,7 @@ function execute(original,command,actorId,now=Date.now()) {
   const previous=original.commands.find(c=>c.id===command.id);
   if(previous){if(previous.fingerprint!==fingerprint)fail('รหัสคำสั่งซ้ำแต่เนื้อหาต่างกัน','CONFLICT');return {state:original,result:previous.result,replayed:true};}
   if(command.expectedRevision!==original.revision)fail('ข้อมูลเปลี่ยนแล้ว กรุณาตรวจสอบใหม่และยืนยันอีกครั้ง','CONFLICT');
-  const state=structuredClone(original),actor=state.employees.find(e=>e.id===actorId);
+  const state=ensureCostState(structuredClone(original)),actor=state.employees.find(e=>e.id===actorId);
   if(!actor)fail('ไม่พบพนักงาน','FORBIDDEN');
   const manager=()=>{if(actor.role!=='manager')fail('ต้องได้รับอนุมัติจากผู้จัดการ','FORBIDDEN');};
   const getSession=()=>{const s=state.sessions.find(s=>s.session_id===payload.session_id);if(!s)fail('ไม่พบ Session');return s;};
@@ -188,7 +238,7 @@ function execute(original,command,actorId,now=Date.now()) {
     for(const [id,quantity] of required){const p=state.products.find(p=>p.id===id);if(!p||!p.active||p.stock<quantity)fail('สินค้าไม่เปิดขายหรือสต๊อกไม่เพียงพอ กรุณาจัดการรายการในบิล');}
     const receipt={id:newId(),payment_id:newId(),bill_id:bill.id,session_id:s?.session_id||null,createdAt:now,demo:true,total:f.charged/100,method:paymentMethod(),lines:lines.map(l=>({kind:l.kind==='product'?'product':'service',category:l.kind,name:l.name,quantity:l.quantity,price:l.unitPriceSatang/100,charge_id:l.id})),transaction_ids:[]};
     for(const line of lines){
-      const before=finance(state,bill.id),tx={id:newId(),payment_id:receipt.payment_id,type:'payment',category:['base','extension','wash100','product'].includes(line.kind)?line.kind:'legacy',method:paymentMethod(),amountSatang:line.amountSatang,bill_id:bill.id,session_id:s?.session_id||null,station_id:s?.station_id||null,charge_id:line.id,receipt_id:receipt.id,command_id:command.id,at:now,employee_id:actor.id,demo:true,...(line.kind==='product'?{product_id:line.product_id,quantity:line.quantity,unitPriceSatang:line.unitPriceSatang,unitCostSatang:line.unitCostSatang}:{})};
+      const before=finance(state,bill.id),tx={id:newId(),payment_id:receipt.payment_id,type:'payment',category:['base','extension','wash100','product'].includes(line.kind)?line.kind:'legacy',method:paymentMethod(),amountSatang:line.amountSatang,bill_id:bill.id,session_id:s?.session_id||null,station_id:s?.station_id||null,charge_id:line.id,receipt_id:receipt.id,command_id:command.id,at:now,employee_id:actor.id,demo:true,...(line.kind==='product'?{product_id:line.product_id,quantity:line.quantity,unitPriceSatang:line.unitPriceSatang,unitCostSatang:Math.round(state.products.find(p=>p.id===line.product_id).cost*100),costCapturedAt:now,costBasis:'sale-time'}:{costSnapshot:structuredClone(line.costSnapshot||null)})};
       state.transactions.push(tx);receipt.transaction_ids.push(tx.id);
       if(line.kind==='product')moveStock(state.products.find(p=>p.id===line.product_id),-line.quantity,'sale','ชำระบิล '+bill.id,tx.id);
       log('payment',s,before,finance(state,bill.id),null,{transaction_id:tx.id,payment_id:receipt.payment_id,bill_id:bill.id,method:tx.method});
@@ -212,13 +262,14 @@ function execute(original,command,actorId,now=Date.now()) {
   const closeUsage=s=>{const open=s.usageIntervals?.find(i=>i.endedAt===null);if(open)open.endedAt=now;};
   let result={};
   const shiftOutcome=applyShiftCommand(state,command,actor,now,{newId,log});
-  if(shiftOutcome.handled)result=shiftOutcome.result;
+  if(applyCostCommand(state,command,actor,now,{newId,log})){}
+  else if(shiftOutcome.handled)result=shiftOutcome.result;
   else switch(command.type){
     case 'start':{
       const station=getStation(payload.station_id);if(station.session_id)fail('จุดนี้มีคิวอยู่แล้ว','CONFLICT');
       const id=newId(),billId=newId();
-      const s={session_id:id,station_id:station.id,startedAt:now,endsAt:now+1500000,serviceStatus:'active',feeSatang:2000,extensions:0,bill_id:billId,history:[],cancelRequest:null,usageIntervals:[{startedAt:now,endedAt:null}],billingFlow:'session-bill'};
-      state.sessions.push(s);state.bills.push({id:billId,session_id:id,status:'UNPAID',createdAt:now,cancelled:false,charges:[{id:newId(),kind:'base',name:'ค่าบริการหนีบ20',amountSatang:2000,at:now}]});station.session_id=id;
+      const s={session_id:id,station_id:station.id,startedAt:now,endsAt:now+1500000,serviceStatus:'active',feeSatang:state.services.find(s=>s.id==='base').priceSatang,extensions:0,bill_id:billId,history:[],cancelRequest:null,usageIntervals:[{startedAt:now,endedAt:null}],billingFlow:'session-bill'};
+      state.sessions.push(s);state.bills.push({id:billId,session_id:id,status:'UNPAID',createdAt:now,cancelled:false,charges:[serviceCharge(state,'base',now,newId())]});station.session_id=id;
       log('start',s,null,s);result={session_id:id,bill_id:billId};break;
     }
     case 'markUsed':{
@@ -234,8 +285,8 @@ function execute(original,command,actorId,now=Date.now()) {
     }
     case 'extend':{
       const s=getSession();active(s);const bill=mutableBill(s);
-      const before=structuredClone(s);s.endsAt+=300000;s.extensions++;s.feeSatang+=500;
-      bill.charges.push({id:newId(),kind:'extension',name:'ต่อเวลา 5 นาที',amountSatang:500,at:now});log('extend',s,before,s);result={bill_id:bill.id};break;
+      const before=structuredClone(s);s.endsAt+=300000;s.extensions++;s.feeSatang+=state.services.find(x=>x.id==='extension').priceSatang;
+      bill.charges.push(serviceCharge(state,'extension',now,newId()));log('extend',s,before,s);result={bill_id:bill.id};break;
     }
     case 'finish':{
       const s=getSession();if(s.serviceStatus==='finished'){result={session_id:s.session_id,alreadyFinished:true};break;}
@@ -294,7 +345,7 @@ function execute(original,command,actorId,now=Date.now()) {
       if(state.products.some(x=>x.id!==product.id&&(x.sku.toLowerCase()===p.sku.trim().toLowerCase()||(p.barcode&&x.barcode.toLowerCase()===p.barcode.trim().toLowerCase()))))fail('รหัสสินค้าหรือบาร์โค้ดซ้ำ');
       const before=editing?structuredClone(product):null;Object.assign(product,{sku:p.sku.trim(),name:p.name.trim(),category:p.category.trim(),barcode:p.barcode.trim(),cost:p.cost,price:p.price});
       if(!editing){state.products.push(product);if(p.stock)moveStock(product,p.stock,'opening','ยอดตั้งต้นสินค้าทดสอบ');}
-      log(command.type,null,before,product);break;
+      state.catalogHistory.push(structuredClone(log(command.type,null,before,product)));break;
     }
     case 'setProductActive':{
       manager();const p=state.products.find(p=>p.id===payload.product_id);if(!p||typeof payload.active!=='boolean')fail('ไม่พบสินค้าหรือสถานะไม่ถูกต้อง');const before=structuredClone(p);p.active=payload.active;log('setProductActive',null,before,p,needReason(payload.reason));break;
@@ -363,7 +414,7 @@ function migrateLegacy(old){
 
 // Upgrade without rewriting old transaction/audit records or inventing payment methods.
 function upgradeState(old){
-  if(old.version===5)return validateState(old);
+  if(old.version===5){const state=structuredClone(old);ensureCostState(state);return validateState(state);}
   if(old.version===1)return migrateLegacy(old);
   if(![2,3,4].includes(old.version))fail('ไม่รองรับรุ่นฐานข้อมูล');
   const state=structuredClone(old);state.schemaArchives=[...(state.schemaArchives||[]),{version:old.version,savedAt:Date.now(),state:structuredClone(old)}];state.version=5;ensureShiftState(state);state.revision++;
@@ -373,7 +424,7 @@ function upgradeState(old){
   for(const b of state.bills){const payments=state.transactions.filter(t=>t.bill_id===b.id&&t.type==='payment');b.everPaid=payments.length>0;b.createdAt??=state.sessions.find(s=>s.session_id===b.session_id)?.startedAt||0;if(payments.length){b.paidAt=payments.at(-1).at;b.paidBy=payments.at(-1).employee_id;b.paymentMethod=new Set(payments.map(t=>t.method||'unknown')).size===1?(payments[0].method||'unknown'):'mixed';b.transaction_ids=payments.map(t=>t.id);}}
   state.cart=state.cart.filter(l=>l.kind==='product');
   state.audit.push({id:newId(),command_id:'schema-v5',type:'schemaUpgrade',at:Date.now(),employee_id:'system-migration',session_id:null,before:{version:old.version},after:{version:5},reason:'เพิ่มระบบกะโดยไม่จัดเงินเก่าเข้ากะหรือสร้างยอดย้อนหลัง'});
-  refreshBills(state);return validateState(state);
+  ensureCostState(state);refreshBills(state);return validateState(state);
 }
 
 const bangkokTimestamp=ms=>new Date(ms+7*3600000).toISOString().replace('Z','+07:00');
@@ -461,6 +512,38 @@ function incomeSummaryCSV(report){
  return '\uFEFF'+[['DEMO ONLY','หัวข้อ','ค่า','หน่วย','จาก (Asia/Bangkok)','ถึง (Asia/Bangkok)','พนักงานที่กรอง'],...metrics.map(row=>['ข้อมูลทดสอบ',...row,report.range.from,report.range.to,report.employee_id||'ทั้งหมด'])].map(row=>row.map(cell).join(',')).join('\r\n');
 }
 
+function makeProfitReport(state,input={},actorId,now=Date.now()){
+ requireCostManager(state,actorId);const range=reportRange(input,now,state),inside=at=>at>=range.start&&at<range.end;
+ const rows=[],unknown=[],payments=recognizedTransactions(state).filter(t=>t.type==='payment');
+ for(const tx of recognizedTransactions(state).filter(t=>inside(t.at)&&(!input.employee_id||t.employee_id===input.employee_id))){
+  const payment=tx.type==='payment'?tx:payments.find(p=>p.id===tx.original_transaction_id);
+  const product=(payment?.category||tx.category)==='product';let cost=null,estimated=false;
+  if(tx.type==='payment'){
+   if(product)cost=Number.isSafeInteger(tx.unitCostSatang)&&Number.isSafeInteger(tx.quantity)?tx.unitCostSatang*tx.quantity:null;
+   else {const result=serviceCostFor(state,{id:tx.charge_id,costSnapshot:tx.costSnapshot},tx.bill_id);cost=result.costSatang;estimated=result.estimated;}
+  }else if(payment){
+   // Money-only refunds retain incurred cost. Only physical returns to stock reverse product COGS.
+   cost=product&&tx.restock?(Number.isSafeInteger(payment.unitCostSatang)&&Number.isSafeInteger(tx.quantity)?-payment.unitCostSatang*tx.quantity:null):0;
+  }
+  const netRevenueSatang=tx.type==='refund'?-tx.amountSatang:tx.amountSatang;
+  const row={transaction_id:tx.id,bill_id:tx.bill_id,session_id:tx.session_id,at:tx.at,employee_id:tx.employee_id,category:product?'product':'service',kind:tx.category,netRevenueSatang,costSatang:cost,grossProfitSatang:cost===null?null:netRevenueSatang-cost,estimated};rows.push(row);if(cost===null)unknown.push(tx.id);
+ }
+ // Explicitly recorded incurred cost on cancelled, never-paid services is a loss, not paid revenue.
+ for(const bill of state.bills.filter(b=>b.cancelled&&!payments.some(t=>t.bill_id===b.id))){
+  for(const line of bill.charges.filter(l=>l.kind!=='product'&&!l.voided)){
+   const actual=state.costAdjustments.filter(a=>a.bill_id===bill.id&&a.charge_id===line.id&&a.actualCost!==null).at(-1);
+   if(!actual||!inside(actual.at)||(input.employee_id&&actual.employee_id!==input.employee_id))continue;
+   const c=serviceCostFor(state,line,bill.id);rows.push({transaction_id:actual.id,bill_id:bill.id,session_id:bill.session_id,at:actual.at,employee_id:actual.employee_id,category:'service',kind:'cancelled-incurred-cost',netRevenueSatang:0,costSatang:c.costSatang,grossProfitSatang:-c.costSatang,estimated:false});
+  }
+ }
+ const summarize=items=>{const netRevenueSatang=items.reduce((n,r)=>n+r.netRevenueSatang,0),knownCostSatang=items.reduce((n,r)=>n+(r.costSatang||0),0),complete=items.every(r=>r.costSatang!==null),grossProfitSatang=complete?netRevenueSatang-knownCostSatang:null;return {netRevenueSatang,costSatang:complete?knownCostSatang:null,knownCostSatang,grossProfitSatang,marginPercent:complete&&netRevenueSatang>0?grossProfitSatang/netRevenueSatang*100:null,complete,estimatedCount:items.filter(r=>r.estimated).length};};
+ return {demo:true,range,generatedAt:now,policy:'รับรู้รายได้ตามวันรับ/คืนเงิน ต้นทุนบริการใช้ข้อมูลจริงล่าสุดแทนประมาณการในงวดขายเดิม ไม่หักค่าคอมซ้ำ ไม่รวมค่าใช้จ่ายดำเนินงาน',product:summarize(rows.filter(r=>r.category==='product')),service:summarize(rows.filter(r=>r.category==='service')),total:summarize(rows),unknownCostTransactionIds:unknown,rows};
+}
+function profitCSV(report){
+ const quote=v=>'"'+String(v??'').replace(/^[=+@-]/,"'$&").replaceAll('"','""')+'"';
+ return '\uFEFF'+[['ข้อมูลทดสอบ กำไรขั้นต้น ไม่ใช่กำไรสุทธิ',report.range.from,report.range.to],...['product','service','total'].map(k=>[k,'รายได้สุทธิ',report[k].netRevenueSatang/100,'ต้นทุน',report[k].costSatang===null?'ต้นทุนไม่ครบ':report[k].costSatang/100,'กำไรขั้นต้น',report[k].grossProfitSatang===null?'ต้นทุนไม่ครบ':report[k].grossProfitSatang/100,'อัตรากำไร %',report[k].marginPercent]),['Transaction','Bill','Session','เวลา Asia/Bangkok','พนักงาน','หมวด','รายได้สุทธิบาท','ต้นทุนบาท','กำไรขั้นต้นบาท','ประมาณการ'],...report.rows.map(r=>[r.transaction_id,r.bill_id,r.session_id,bangkokTimestamp(r.at),r.employee_id,r.category,r.netRevenueSatang/100,r.costSatang===null?'ต้นทุนไม่ครบ':r.costSatang/100,r.grossProfitSatang===null?'ต้นทุนไม่ครบ':r.grossProfitSatang/100,r.estimated?'ใช่':'ไม่'])].map(row=>row.map(quote).join(',')).join('\r\n');
+}
+
 const $=s=>document.querySelector(s);
 const money=n=>new Intl.NumberFormat('th-TH',{style:'currency',currency:'THB'}).format(n);
 const cash=satang=>money(satang/100);
@@ -475,17 +558,17 @@ let state,mode=(location.protocol==='file:'||typeof NEEB20_STANDALONE!=='undefin
 const notified=new Map();
 function localRead(){
   const saved=localStorage.getItem(STORAGE_KEY);
-  if(saved)return validateState(JSON.parse(saved));
+  if(saved){const raw=JSON.parse(saved);if(raw.costSchema===1)return validateState(raw);const upgraded=upgradeState(raw);localStorage.setItem(STORAGE_KEY,JSON.stringify(upgraded));return upgraded;}
   const previous=localStorage.getItem(PREVIOUS_KEY)||localStorage.getItem(OLDER_KEY)||localStorage.getItem(ANCIENT_KEY),legacy=localStorage.getItem(LEGACY_KEY),initial=previous?upgradeState(JSON.parse(previous)):legacy?migrateLegacy(JSON.parse(legacy)):createDemo();
   localStorage.setItem(STORAGE_KEY,JSON.stringify(initial));return initial;
 }
 async function readState(){
-  if(mode==='local-demo')return localRead();
-  const r=await fetch('/api/state',{cache:'no-store'});if(!r.ok)throw Error('ติดต่อเซิร์ฟเวอร์ไม่ได้ ยังไม่บันทึกคำสั่ง');const body=await r.json();serverOffset=body.serverNow-Date.now();return validateState(body.state);
+  if(mode==='local-demo')return costVisibleState(localRead(),activeActor);
+  const r=await fetch('/api/state',{cache:'no-store',headers:{'X-NEEB20-Actor':activeActor}});if(!r.ok)throw Error('ติดต่อเซิร์ฟเวอร์ไม่ได้ ยังไม่บันทึกคำสั่ง');const body=await r.json();serverOffset=body.serverNow-Date.now();return validateState(body.state);
 }
 async function dispatch(command,actorId){
   if(mode==='local-demo'){
-    const write=()=>{const result=execute(localRead(),command,actorId);localStorage.setItem(STORAGE_KEY,JSON.stringify(result.state));return result;};
+    const write=()=>{const result=execute(localRead(),command,actorId);localStorage.setItem(STORAGE_KEY,JSON.stringify(result.state));return {...result,state:costVisibleState(result.state,actorId)};};
     return navigator.locks? navigator.locks.request('neeb20-demo-writes',write):write();
   }
   let response;try{response=await fetch('/api/commands',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({command,actorId})});}
@@ -574,12 +657,12 @@ function stations(){
  $('#summary').textContent=`ว่าง ${state.stations.filter(s=>!s.session_id).length} / 12 จุด`;
  $('#stations').innerHTML=state.stations.map(t=>{const s=sessionAt(state,t.id),f=s?finance(state,s.bill_id):null;
   const btn=(action,label)=>`<button data-action="${action}" data-session="${escape(s.session_id)}" ${f.paid>0&&['extend','addBillProduct'].includes(action)?'disabled title="บิลชำระแล้ว ล็อกรายการเพื่อไม่เปลี่ยนยอดรับ"':''} class="${action==='payBill'?'':'secondary'}">${label}</button>`;
-  return `<article id="station-${t.id}" class="station"><h2>จุด ${String(t.id).padStart(2,'0')}</h2><span class="badge"></span><div class="timer" aria-label="เวลาคงเหลือ"></div><p>${s?`ยอดปัจจุบัน <b>${cash(f.charged)}</b><br>${billStatus(state,s.bill_id)} · Session ${escape(s.session_id.slice(0,8))}`:'25 นาที · 20 บาท'}</p><div class="actions">${s?btn('extend','+5 นาที / 5฿')+btn('addBillProduct','เพิ่มสินค้า')+btn('move','ย้ายจุด')+btn('payBill',f.paid>0?'ดูบิล · ชำระแล้ว':'คิดเงิน / ชำระเงิน')+btn('finish','จบคิว')+btn('requestCancel','ยกเลิก'):`<button data-start="${t.id}">เริ่มคิว 20฿</button>`}</div></article>`;
+  return `<article id="station-${t.id}" class="station"><h2>จุด ${String(t.id).padStart(2,'0')}</h2><span class="badge"></span><div class="timer" aria-label="เวลาคงเหลือ"></div><p>${s?`ยอดปัจจุบัน <b>${cash(f.charged)}</b><br>${billStatus(state,s.bill_id)} · Session ${escape(s.session_id.slice(0,8))}`:`25 นาที · ${cash(state.services.find(s=>s.id==='base').priceSatang)}`}</p><div class="actions">${s?btn('extend',`+5 นาที / ${cash(state.services.find(s=>s.id==='extension').priceSatang)}`)+btn('addBillProduct','เพิ่มสินค้า')+btn('move','ย้ายจุด')+btn('payBill',f.paid>0?'ดูบิล · ชำระแล้ว':'คิดเงิน / ชำระเงิน')+btn('finish','จบคิว')+btn('requestCancel','ยกเลิก'):`<button data-start="${t.id}">เริ่มคิว ${cash(state.services.find(s=>s.id==='base').priceSatang)}</button>`}</div></article>`;
  }).join('');tick();
 }
 function products(){
  const query=$('#search').value.trim().toLowerCase(),manager=state.employees.find(e=>e.id===activeActor)?.role==='manager';
- $('#products').innerHTML=state.products.filter(p=>[p.name,p.barcode,p.sku,p.category].some(x=>x.toLowerCase().includes(query))).map(p=>`<div class="product"><div><b>${escape(p.name)}</b><small>${escape(p.sku)} · ${escape(p.category)} · ${p.active?'เปิดขาย':'ปิดขาย'}<br>ทุน ${money(p.cost)} · ขาย ${money(p.price)} · คงเหลือ ${p.stock}</small><div class="actions"><button class="secondary" data-product-action="receiveStock" data-product-id="${escape(p.id)}">รับเข้า</button>${manager?`<button class="secondary" data-product-action="editProduct" data-product-id="${escape(p.id)}">แก้ไข</button><button class="secondary" data-product-action="adjustStock" data-product-id="${escape(p.id)}">ปรับสต๊อก</button><button class="secondary" data-product-action="setProductActive" data-product-id="${escape(p.id)}">${p.active?'ปิดขาย':'เปิดขาย'}</button>`:''}</div></div><button data-product="${escape(p.id)}" ${p.stock<=0||!p.active?'disabled':''}>ใส่ตะกร้า</button></div>`).join('')||'<p>ไม่พบสินค้า</p>';
+ $('#products').innerHTML=state.products.filter(p=>[p.name,p.barcode,p.sku,p.category].some(x=>x.toLowerCase().includes(query))).map(p=>`<div class="product"><div><b>${escape(p.name)}</b><small>${escape(p.sku)} · ${escape(p.category)} · ${p.active?'เปิดขาย':'ปิดขาย'}<br>${manager?`ทุน ${money(p.cost)} · กำไร/หน่วย ${money(p.price-p.cost)} · อัตรากำไร ${p.price>0?((p.price-p.cost)/p.price*100).toFixed(2):'—'}% · `:''}ขาย ${money(p.price)} · คงเหลือ ${p.stock}</small><div class="actions"><button class="secondary" data-product-action="receiveStock" data-product-id="${escape(p.id)}">รับเข้า</button>${manager?`<button class="secondary" data-product-action="editProduct" data-product-id="${escape(p.id)}">แก้ไข</button><button class="secondary" data-product-action="adjustStock" data-product-id="${escape(p.id)}">ปรับสต๊อก</button><button class="secondary" data-product-action="setProductActive" data-product-id="${escape(p.id)}">${p.active?'ปิดขาย':'เปิดขาย'}</button>`:''}</div></div><button data-product="${escape(p.id)}" ${p.stock<=0||!p.active?'disabled':''}>ใส่ตะกร้า</button></div>`).join('')||'<p>ไม่พบสินค้า</p>';
  $('#product-form').closest('details').hidden=!manager;
  $('#inventory-log').innerHTML=state.stockMovements.slice(-50).reverse().map(m=>`<p>${date(m.at)} · ${escape(state.products.find(p=>p.id===m.product_id)?.name||m.product_id)} · ${escape(m.kind)} ${m.quantityDelta>0?'+':''}${m.quantityDelta} · ${m.before} → ${m.after}<br>${escape(m.employee_id)} · ${escape(m.reason)} · ${escape(m.transaction_id||'')}</p>`).join('')||'<p>ยังไม่มีรายการเคลื่อนไหว</p>';
  $('#sales-history').innerHTML=state.transactions.filter(t=>t.type==='payment'&&t.category==='product').slice(-30).reverse().map(t=>{
@@ -595,25 +678,25 @@ function productAction(type,p){
 }
 function reports(){
  try{
-  const report=makeReport(state,{mode:$('#report-mode').value,week:$('#report-week').value,employee_id:$('#report-employee').value,day:$('#report-day').value,month:$('#report-month').value,from:$('#report-from').value,to:$('#report-to').value},appNow()),s=report.summary;
+  const report=makeReport(costVisibleState(state,activeActor),{mode:$('#report-mode').value,week:$('#report-week').value,employee_id:$('#report-employee').value,day:$('#report-day').value,month:$('#report-month').value,from:$('#report-from').value,to:$('#report-to').value},appNow()),s=report.summary;
   $('#report-error').textContent='';$('#report-summary').innerHTML=`<p>ข้อมูลทดสอบ · ${report.range.from} ถึง ${report.range.to} (Asia/Bangkok)</p><div class="report-grid">${[['บริการหนีบ20',s.base],['ต่อเวลา',s.extension],['สระ100 (เฉพาะรายการรับแล้ว)',s.wash100],['สินค้า',s.product],['ข้อมูลเก่าไม่ระบุหมวด',s.legacy],['รับเงินรวม',s.received],['คืนเงินรวม',s.refunded],['รายได้สุทธิ',s.net],['เงินสดสุทธิ',s.cash.net],['QR สุทธิ (พนักงานยืนยัน)',s.qr.net],['ช่องทางเก่าไม่ระบุสุทธิ',s.unknown.net]].map(([label,n])=>`<div><small>${label}</small><strong>${cash(n)}</strong></div>`).join('')}</div><p>สระ100 จะแสดงเมื่อมีธุรกรรมรับเงินที่รองรับ รุ่นนี้ยังไม่มีหน้าขาย/จองสระ100</p><p>บิลรับเงินในช่วงนี้ ${report.paidBillCount} · บิลค้างปัจจุบัน ${report.unpaidCurrentCount} / ${cash(report.unpaidCurrentSatang)} (ไม่รวมรายได้)</p><p>เงินสด: รับ ${cash(s.cash.received)} / คืน ${cash(s.cash.refunded)} · QR: รับ ${cash(s.qr.received)} / คืน ${cash(s.qr.refunded)}</p><p>คิวเริ่มในช่วงนี้ ${report.sessionCount} · ในกลุ่มนี้จบ ${report.finishedCount} / ยกเลิก ${report.cancelledCount}<br>เหตุการณ์จบในช่วงวันที่ ${report.finishedInRange} / ยกเลิก ${report.cancelledInRange} (อาจเป็นคิวเริ่มก่อนช่วงวันที่)</p>`;
   $('#report-sessions').innerHTML=report.sessions.map(s=>`<div class="session-record"><b>${escape(s.session_id)}</b><p>จุด ${s.stationHistory.join(' → ')} · ย้าย ${s.moves} ครั้ง · ${labels[s.status]}<br>เริ่มจับเวลา ${date(s.startedAt)} · กำหนดสิ้นสุด ${date(s.endsAt)}<br>จบจริง ${date(s.finishedAt)} · ยกเลิก ${date(s.cancelledAt)}<br>ใช้งานจริงตามการยืนยัน ${s.usageMilliseconds===null?'ยังไม่ยืนยัน / ข้อมูลเก่าไม่ทราบ':Math.floor(s.usageMilliseconds/60000)+' นาที '+Math.floor(s.usageMilliseconds/1000)%60+' วินาที'}</p></div>`).join('')||'<p>ไม่มี Session ที่เริ่มในช่วงนี้</p>';
   $('#report-bills').innerHTML=report.bills.map(b=>`<details class="session-record"><summary>Bill ${escape(b.bill_id.slice(0,8))} · ${b.status} · ${cash(b.totalSatang)}</summary><b>Bill ${escape(b.bill_id)} · ${b.status}</b><p>Session ${escape(b.session_id||'ขายสินค้า POS')} · Station ${b.station_id??'—'}<br>เริ่ม ${date(b.startedAt)} · จบ ${date(b.finishedAt)} · ใช้งาน ${b.usageMilliseconds===null?'ไม่ทราบ':Math.floor(b.usageMilliseconds/1000)+' วินาที'}<br>${b.lines.map(l=>`${escape(l.name)} × ${l.quantity} = ${cash(l.amountSatang)}`).join('<br>')}<br>บริการ ${cash(b.serviceSatang)} · สินค้า ${cash(b.productSatang)} · รวม ${cash(b.totalSatang)}<br>รับสด ${cash(b.cashSatang)} · รับ QR ${cash(b.qrSatang)} · คืน ${cash(b.refundedSatang)}<br>ชำระ ${date(b.paidAt)} · ${escape(b.paidBy||'—')} · ${escape(b.paymentMethod||'—')}<br>Payment ${escape(b.payment_id||'—')}<br>Transaction ${b.transaction_ids.map(escape).join(', ')}</p></details>`).join('')||'<p>ไม่มีบิลในช่วงนี้</p>';
   $('#report-transactions').innerHTML=report.transactions.slice().reverse().map(t=>`<div class="session-record"><b>${t.type==='refund'?'คืนเงิน':'รับเงิน'} ${cash(t.amountSatang)} · ${escape(t.category||'legacy')} · ${escape(t.method||'unknown')}</b><p>${date(t.at)} · ${escape(t.employee_id)}<br>Transaction ${escape(t.id)}<br>Session ${escape(t.session_id||'—')} · บิล ${escape(t.bill_id||'—')}<br>อ้างอิงเดิม ${escape(t.original_transaction_id||'—')}<br>${escape(t.reason||'')}</p></div>`).join('')||'<p>ไม่มีธุรกรรมในช่วงนี้</p>';
-  renderReconciliation(report);$('#report-refunds').textContent=`รายการคืนเงิน ${report.refunds.length} รายการ · ${cash(s.refunded)} (ดูรหัสอ้างอิงในประวัติธุรกรรมด้านล่าง)`;return report;
+  renderReconciliation(report);renderProfit(report.range);$('#report-refunds').textContent=`รายการคืนเงิน ${report.refunds.length} รายการ · ${cash(s.refunded)} (ดูรหัสอ้างอิงในประวัติธุรกรรมด้านล่าง)`;return report;
  }catch(e){$('#report-error').textContent=e.message;$('#report-summary').textContent='';$('#report-sessions').textContent='';$('#report-transactions').textContent='';$('#report-refunds').textContent='';$('#report-bills').textContent='';$('#shift-list').textContent='';$('#income-chart').textContent='';return null;}
 }
 function records(){
   const manager=state.employees.find(e=>e.id===activeActor)?.role==='manager';
   $('#sessions').innerHTML=state.sessions.slice().reverse().map(s=>{const f=finance(state,s.bill_id);const btn=(action,label)=>`<button class="secondary" data-record="${action}" data-session="${escape(s.session_id)}">${label}</button>`;
-    return `<article class="session-record"><b>จุด ${s.station_id} · ${escape(s.session_id)}</b><p>${labels[status(s,appNow())]} · ${financialLabels[f.status]}<br>บิล ${escape(s.bill_id)} · ${billStatus(state,s.bill_id)} · รวม ${cash(f.charged)} · รับแล้ว ${cash(f.paid)} · คืนแล้ว ${cash(f.refunded)} · ค้าง ${cash(f.due)}</p><div class="actions">${f.due?btn('payBill','คิดเงิน / ชำระเงิน'):''}${s.serviceStatus!=='cancelled'&&!s.cancelRequest?btn('requestCancel','ขอยกเลิก'):''}${s.cancelRequest?(manager?btn('approveCancel','อนุมัติยกเลิก'):'<span>รอผู้จัดการอนุมัติยกเลิก</span>'):''}${manager&&s.serviceStatus==='finished'?btn('restore','กู้คืนคิว'):''}${manager&&f.net>0?btn('refund','คืนเงินทดสอบ'):''}</div><details><summary>ประวัติคิว ${s.history.length} เหตุการณ์</summary><pre>${escape(JSON.stringify(state.audit.filter(a=>a.session_id===s.session_id),null,2))}</pre></details></article>`;
+    return `<article class="session-record"><b>จุด ${s.station_id} · ${escape(s.session_id)}</b><p>${labels[status(s,appNow())]} · ${financialLabels[f.status]}<br>บิล ${escape(s.bill_id)} · ${billStatus(state,s.bill_id)} · รวม ${cash(f.charged)} · รับแล้ว ${cash(f.paid)} · คืนแล้ว ${cash(f.refunded)} · ค้าง ${cash(f.due)}</p><div class="actions">${f.due?btn('payBill','คิดเงิน / ชำระเงิน'):''}${s.serviceStatus!=='cancelled'&&!s.cancelRequest?btn('requestCancel','ขอยกเลิก'):''}${s.cancelRequest?(manager?btn('approveCancel','อนุมัติยกเลิก'):'<span>รอผู้จัดการอนุมัติยกเลิก</span>'):''}${manager&&s.serviceStatus==='finished'?btn('restore','กู้คืนคิว'):''}${manager&&f.net>0?btn('refund','คืนเงินทดสอบ'):''}</div><details><summary>ประวัติคิว ${s.history.length} เหตุการณ์</summary><pre>${escape(JSON.stringify(costVisibleState(state,activeActor).audit.filter(a=>a.session_id===s.session_id),null,2))}</pre></details></article>`;
   }).join('')||'<p>ยังไม่มีคิวทดสอบ</p>';
   const summary=salesSummary(state);$('#financial-summary').textContent=`รับเงินทดสอบ ${cash(summary.received)} · คืนเงินทดสอบ ${cash(summary.refunded)} · สุทธิ ${cash(summary.net)}`;
-  $('#audit').innerHTML=state.audit.slice(-50).reverse().map(a=>`<details><summary>${escape(a.type)} · ${escape(a.employee_id)} · ${date(a.at)}</summary><pre>${escape(JSON.stringify(a,null,2))}</pre></details>`).join('')||'<p>ยังไม่มีเหตุการณ์</p>';
+  $('#audit').innerHTML=costVisibleState(state,activeActor).audit.slice(-50).reverse().map(a=>`<details><summary>${escape(a.type)} · ${escape(a.employee_id)} · ${date(a.at)}</summary><pre>${escape(JSON.stringify(a,null,2))}</pre></details>`).join('')||'<p>ยังไม่มีเหตุการณ์</p>';
   $('#legacy').textContent=state.legacyArchive?'นำเข้าคิวและตะกร้า v1 แล้ว เก็บข้อมูลต้นฉบับทั้งหมดใน legacyArchive; บิลเก่าที่รับแล้วไม่ถูกสร้างเป็นยอดรับเงินใหม่ ดูต้นฉบับได้ในไฟล์สำรอง':'';
 }
 function render(){
-  stations();products();records();reports();const lines=cartLines(state);
+  stations();products();records();reports();renderCosts();$('#service-pricing').textContent=`${cash(state.services.find(s=>s.id==='base').priceSatang)} / 25 นาที · ต่อเวลา ${cash(state.services.find(s=>s.id==='extension').priceSatang)} / 5 นาที`;const lines=cartLines(state);
   $('#cart').innerHTML=lines.map(l=>`<div class="cart-line"><div>${escape(l.name)} × ${l.quantity}<small>${money(l.price*l.quantity)}${l.bill_id?` · บิล ${escape(l.bill_id)}`:''}</small></div><button class="secondary" data-remove="${escape(l.bill_id||l.id)}">นำออกจากตะกร้า</button></div>`).join('')||'<p>ยังไม่มีรายการค้างในตะกร้า</p>';
   $('#total').textContent=money(total(lines));$('#checkout').disabled=!lines.length;
   const last=state.receipts.at(-1);$('#receipt').innerHTML=last?`<b>บิลทดสอบล่าสุด · ไม่ใช่หลักฐานรับเงินจริง</b><br>${escape(last.id)}<br>${date(last.createdAt)}<br>${last.lines.map(l=>`${escape(l.name)} × ${l.quantity} — ${money(l.price*l.quantity)}`).join('<br>')}<br><b>รวม ${money(last.total)}</b>`:'';
@@ -628,8 +711,8 @@ $('#cart').onclick=e=>{const b=e.target.closest('[data-remove]');if(b)showDialog
 $('#search').addEventListener('input',()=>{if(state)products();});
 $('#product-form').onsubmit=e=>{e.preventDefault();const f=new FormData(e.target),payload={sku:f.get('sku').trim(),category:f.get('category').trim(),name:f.get('name').trim(),barcode:f.get('barcode').trim(),cost:Number(f.get('cost')),price:Number(f.get('price')),stock:Number(f.get('stock'))};showDialog('ยืนยันเพิ่มสินค้าทดสอบ',`<p>${escape(payload.name)} · ขาย ${money(payload.price)} · สต๊อก ${payload.stock}</p>`,'addProduct',()=>payload);};
 $('#checkout').onclick=()=>showDialog('ยืนยันรับเงินทดสอบ',`<p>รวม ${money(total(cartLines(state)))}</p><p>จำลองรับเงินเท่านั้น ไม่เชื่อมธนาคาร คำสั่งเดิมบันทึกได้ครั้งเดียว</p>`+paymentFields(),'checkout',()=>paymentPayload());
-$('#actor').onchange=()=>{activeActor=$('#actor').value;if(state){records();products();reports();}};
-$('#export').onclick=async()=>{try{const latest=await readState(),blob=new Blob([JSON.stringify(latest,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`neeb20-demo-backup-${Date.now()}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}catch(e){setMessage(e.message);}};
+$('#actor').onchange=async()=>{if(busy||modal){$('#actor').value=activeActor;return;}activeActor=$('#actor').value;try{state=await readState();render();}catch(e){setMessage(e.message);}};
+$('#export').onclick=async()=>{try{const latest=await readState(),blob=new Blob([JSON.stringify(costVisibleState(latest,activeActor),null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`neeb20-demo-backup-${Date.now()}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}catch(e){setMessage(e.message);}};
 $('#report-controls').onchange=()=>{if(state)reports();};
 $('#export-csv').onclick=()=>{const report=reports();if(!report)return;const url=URL.createObjectURL(new Blob([reportCSV(report)],{type:'text/csv;charset=utf-8'})),a=document.createElement('a');a.href=url;a.download=`neeb20-demo-report-${report.range.from}-${report.range.to}.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
 const reconcileLabels={MATCH:'ยอดตรง',SHORT:'เงินขาด',OVER:'เงินเกิน',PENDING:'รอตรวจสอบ'};
@@ -672,6 +755,30 @@ $('#export-summary').onclick=()=>{const r=reports();if(!r)return;const url=URL.c
 $('#export-shifts').onclick=()=>{const r=reports();if(!r)return;const url=URL.createObjectURL(new Blob([shiftsCSV(r)],{type:'text/csv;charset=utf-8'})),a=document.createElement('a');a.href=url;a.download=`neeb20-demo-shifts-${r.range.from}-${r.range.to}.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
 $('#print-report').onclick=()=>{if(!reports())return;const details=[...document.querySelectorAll('#income-menu details,#shift-menu details')].map(el=>[el,el.open]);details.forEach(([el])=>el.open=true);const restore=()=>details.forEach(([el,open])=>el.open=open);window.addEventListener('afterprint',restore,{once:true});try{window.print();}catch(e){restore();setMessage(e.message);}};
 $('#export-bills-csv').onclick=()=>{const report=reports();if(!report)return;const url=URL.createObjectURL(new Blob([billsCSV(report)],{type:'text/csv;charset=utf-8'})),a=document.createElement('a');a.href=url;a.download=`neeb20-demo-bills-${report.range.from}-${report.range.to}.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
+
+const costLabels={materialsSatang:'ค่าวัสดุ',electricitySatang:'ค่าไฟ',waterSatang:'ค่าน้ำ',laborSatang:'ค่าแรงรวมค่าคอมประมาณการ',otherSatang:'อื่น ๆ',commissionIncludedSatang:'ค่าคอมที่รวมอยู่ในค่าแรงข้างต้น (ไม่บวกซ้ำ)'};
+const percentCost=n=>n===null?'—':n.toFixed(2)+'%';
+function costFields(value={}){return [...COST_FIELDS,'commissionIncludedSatang'].map(k=>moneyInput('cost-'+k,costLabels[k],(value?.[k]||0)/100)).join('');}
+function costPayload(){return Object.fromEntries([...COST_FIELDS,'commissionIncludedSatang'].map(k=>[k,satang('cost-'+k)]));}
+function renderCosts(){
+ const manager=state.employees.find(e=>e.id===activeActor)?.role==='manager';$('#cost-menu').hidden=!manager;if(!manager){$('#services-cost').textContent='';$('#service-actuals').textContent='';$('#catalog-cost-history').textContent='';return;}
+ $('#services-cost').innerHTML=(state.services||[]).map(s=>{const c=s.cost?estimatedCost(s.cost):null;return `<div class="session-record"><b>${escape(s.name)}</b><p>ขาย ${cash(s.priceSatang)} · ทุนประมาณการ ${c===null?'ยังไม่ได้กำหนด':cash(c)} · กำไร/หน่วย ${c===null?'—':cash(s.priceSatang-c)} · อัตรากำไร ${c===null?'—':percentCost((s.priceSatang-c)/s.priceSatang*100)}</p>${s.cost?Object.entries(costLabels).map(([k,v])=>`<small>${v}: ${cash(s.cost[k])}</small>`).join(''):''}<button data-edit-service="${escape(s.id)}">แก้ไขราคา / ต้นทุนบริการ</button></div>`;}).join('');
+ $('#service-actuals').innerHTML=state.bills.flatMap(b=>b.charges.filter(l=>!l.voided&&l.kind!=='product').map(l=>`<option value="${escape(b.id)}:${escape(l.id)}">${escape(b.id.slice(0,8))} · ${escape(l.name||l.kind)} · ${b.status}</option>`)).join('');
+ $('#catalog-cost-history').textContent=JSON.stringify({priceHistory:(state.catalogHistory||[]).map(e=>({...e,bangkokTime:date(e.at)})),actualServiceCostHistory:(state.costAdjustments||[]).map(e=>({...e,bangkokTime:date(e.at)}))},null,2);
+}
+function renderProfit(range){
+ const manager=state.employees.find(e=>e.id===activeActor)?.role==='manager';$('#profit-menu').hidden=!manager;if(!manager){$('#profit-summary').textContent='';$('#profit-details').textContent='';return;}
+ const r=makeProfitReport(state,{mode:'range',from:range.from,to:range.to,employee_id:$('#report-employee').value},activeActor,appNow());
+ $('#profit-summary').innerHTML=`<p>${escape(r.policy)} · ${r.range.from} ถึง ${r.range.to} (Asia/Bangkok)</p>`+[['สินค้า',r.product],['บริการ',r.service],['รวม',r.total]].map(([label,v])=>`<div class="session-record"><b>${label}</b><p>รายได้สุทธิ ${cash(v.netRevenueSatang)} · ต้นทุน ${v.complete?cash(v.costSatang):'ยังไม่ครบ (ที่ทราบ '+cash(v.knownCostSatang)+')'} · กำไรขั้นต้น ${v.complete?cash(v.grossProfitSatang):'คำนวณไม่ได้ ต้นทุนไม่ครบ'} · อัตรากำไร ${percentCost(v.marginPercent)} · ต้นทุนประมาณการ ${v.estimatedCount} รายการ</p></div>`).join('');
+ $('#profit-details').textContent=JSON.stringify(r.rows,null,2);return r;
+}
+$('#services-cost').onclick=e=>{const b=e.target.closest('[data-edit-service]');if(!b)return;const s=state.services.find(s=>s.id===b.dataset.editService);showDialog('แก้ราคา/ต้นทุนบริการ สำหรับรายการใหม่เท่านั้น',`<p>${escape(s.name)} · ไม่เปลี่ยน Timer หรือรายการเก่า</p>`+moneyInput('service-price','ราคาขาย',s.priceSatang/100)+costFields(s.cost),'editService',()=>({service_id:s.id,priceSatang:satang('service-price'),cost:costPayload()}));};
+$('#record-service-cost').onclick=()=>{
+ const selected=$('#service-actuals').value;if(!selected)return;const [bill_id,charge_id]=selected.split(':');
+ showDialog('บันทึกต้นทุนบริการจริง / ค่าคอมจริง',`<p>เลือกเฉพาะค่าคอมจริงเพื่อแทนส่วนค่าคอมในค่าแรงเดิม หรือระบุต้นทุนจริงทั้งหมดเพื่อแทนประมาณการ ต้องใส่ค่าแรงที่รวมค่าคอมแล้วและระบุส่วนค่าคอมที่รวมด้วย</p><label><input id="replace-actual-cost" type="checkbox"> ใช้ต้นทุนจริงทั้งหมดด้านล่าง (ศูนย์ได้เมื่อไม่ได้ใช้บริการ)</label>`+costFields()+moneyInput('actual-commission','ค่าคอมจริง (เว้นว่างหากยังไม่ทราบ)')+reasonField,'recordServiceCost',()=>({bill_id,charge_id,actualCost:$('#replace-actual-cost').checked?costPayload():null,actualCommissionSatang:$('#actual-commission').value===''?null:satang('actual-commission'),reason:reason()}));
+ $('#actual-commission').required=false;
+};
+$('#export-profit').onclick=()=>{const r=reports();if(!r)return;const p=renderProfit(r.range);if(!p)return;const url=URL.createObjectURL(new Blob([profitCSV(p)],{type:'text/csv;charset=utf-8'})),a=document.createElement('a');a.href=url;a.download=`neeb20-demo-profit-${p.range.from}-${p.range.to}.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
 async function init(){try{
   state=await readState();const today=bangkokDay(appNow());$('#report-day').value=today;$('#report-month').value=today.slice(0,7);$('#report-week').value=isoWeek(today);$('#report-from').value=today;$('#report-to').value=today;$('#report-employee').innerHTML='<option value="">พนักงานทุกคน</option>'+state.employees.map(e=>`<option value="${escape(e.id)}">${escape(e.name)}</option>`).join('');$('#actor').innerHTML=state.employees.map(e=>`<option value="${escape(e.id)}">${escape(e.name)} (${e.role})</option>`).join('');
   $('#mode').textContent=mode==='server-demo'?'SERVER DEMO · SQLite กลางบนเครื่องเซิร์ฟเวอร์ · หลายเครื่องต้องเปิดเซิร์ฟเวอร์เดียวกัน · บิลประจำ Session':'LOCAL DEMO · ทดลองหน้าจอเท่านั้น ยอดนี้ไม่ใช่ฐานรายได้ร้าน ใช้ Server Demo เพื่อเก็บข้อมูลถาวร ห้ามใช้รับเงินจริง';if(state.fixtureLabel)$('#mode').textContent+=' · '+state.fixtureLabel;render();

@@ -145,3 +145,9 @@ QR original transaction มี staff_confirmation และ UNVERIFIED bank flag
 v4 → v5 archive เดิมและสร้าง arrays shifts/shiftControl โดยไม่เดาย้อน assignment เงินเก่าเป็น unassigned; historical shift ต้อง manager ระบุช่วง/ยอดตามหลักฐาน ไม่ซ้อนและไม่มี ID ซ้ำ Unknown-method history ยังคง pending ไม่อนุมัติโดยเดาช่องทาง
 
 ข้อมูลตัวอย่างสร้างจาก execute commands ใน demo-scenarios.js ไปฐาน reconciliation-sample.sqlite โดย reserve ไฟล์ด้วย wx ปฏิเสธเขียนทับ แยกจาก demo.sqlite ไม่มี sample injected ระหว่าง startup ปกติ ยังคงข้อจำกัด Demo identity, JSON SQLite schema, หนึ่งลิ้นชัก และไม่มี bank automation/อุปกรณ์จริง
+
+## v0.6.0: cost snapshots and gross profit
+
+Additive `costSchema:1` retains schema 5 and every existing financial/audit record. Product payment lines capture sale-time unitCostSatang. Service charges capture service-time estimated components. `catalogHistory` is append-only price/cost history. `costAdjustments` is an append-only journal for incurred service cost and actual commission; latest values replace estimates, with included commission deducted once before actual commission is added. Reports on prior sale periods can be restated using this latest knowledge, never by rewriting financial transactions. Unknown legacy costs yield incomplete/null profits. Product restock refunds reverse original COGS; money-only refunds retain incurred costs. Explicit actual costs on never-paid cancelled services are losses on recording date. Operating expenses have a separate future namespace and never affect gross profit.
+
+Demo staff API views recursively strip cost/commission snapshots, archives, command fingerprints and cost history. Profit reads and cost writes require manager. Client-selected Demo identity remains untrusted authentication: production needs server-established authenticated sessions and verified permissions. Local file data cannot be confidential. See `docs/costs-and-profit.md` for Thai policies and test procedure.

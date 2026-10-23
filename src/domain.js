@@ -1,3 +1,4 @@
+import {ensureCostState,serviceCharge,applyCostCommand} from './costing.js';
 import {ensureShiftState,applyShiftCommand,assignNewTransactions,validateShifts} from './shifts.js';
 export const STORAGE_KEY = 'neeb20:demo:v5';
 export const PREVIOUS_KEY = 'neeb20:demo:v4';
@@ -9,7 +10,7 @@ export function createDemo() {
   const state={version:5,demo:true,shifts:[],shiftControl:{enabled:false},revision:0,stations:Array.from({length:12},(_,i)=>({id:i+1,session_id:null})),sessions:[],bills:[],transactions:[],audit:[],commands:[],
     employees:[{id:'staff-01',name:'พนักงานทดสอบ 01',role:'staff'},{id:'manager-01',name:'ผู้จัดการทดสอบ 01',role:'manager'}],
     stockMovements:[],products:[{id:'p1',sku:'DEMO001',category:'อุปกรณ์',active:true,name:'หวีทดสอบ',barcode:'885000000001',cost:15,price:29,stock:20},{id:'p2',sku:'DEMO002',category:'ดูแลผม',active:true,name:'เซรั่มทดสอบ',barcode:'885000000002',cost:45,price:79,stock:10}],cart:[],receipts:[]};
-  state.stockMovements=openingMovements(state.products,0,'ยอดตัวอย่างเริ่มต้น — ไม่ใช่สต๊อกจริง');return state;
+  ensureCostState(state);state.stockMovements=openingMovements(state.products,0,'ยอดตัวอย่างเริ่มต้น — ไม่ใช่สต๊อกจริง');return state;
 }
 function openingMovements(products,at,reason){return products.map(p=>({id:newId(),product_id:p.id,quantityDelta:p.stock,before:0,after:p.stock,kind:'opening',reason,at,employee_id:'system-demo',command_id:'opening',transaction_id:null}));}
 export function fail(message,code='INVALID') { const e=new Error(message);e.code=code;throw e; }
@@ -56,7 +57,7 @@ export function execute(original,command,actorId,now=Date.now()) {
   const previous=original.commands.find(c=>c.id===command.id);
   if(previous){if(previous.fingerprint!==fingerprint)fail('รหัสคำสั่งซ้ำแต่เนื้อหาต่างกัน','CONFLICT');return {state:original,result:previous.result,replayed:true};}
   if(command.expectedRevision!==original.revision)fail('ข้อมูลเปลี่ยนแล้ว กรุณาตรวจสอบใหม่และยืนยันอีกครั้ง','CONFLICT');
-  const state=structuredClone(original),actor=state.employees.find(e=>e.id===actorId);
+  const state=ensureCostState(structuredClone(original)),actor=state.employees.find(e=>e.id===actorId);
   if(!actor)fail('ไม่พบพนักงาน','FORBIDDEN');
   const manager=()=>{if(actor.role!=='manager')fail('ต้องได้รับอนุมัติจากผู้จัดการ','FORBIDDEN');};
   const getSession=()=>{const s=state.sessions.find(s=>s.session_id===payload.session_id);if(!s)fail('ไม่พบ Session');return s;};
@@ -83,7 +84,7 @@ export function execute(original,command,actorId,now=Date.now()) {
     for(const [id,quantity] of required){const p=state.products.find(p=>p.id===id);if(!p||!p.active||p.stock<quantity)fail('สินค้าไม่เปิดขายหรือสต๊อกไม่เพียงพอ กรุณาจัดการรายการในบิล');}
     const receipt={id:newId(),payment_id:newId(),bill_id:bill.id,session_id:s?.session_id||null,createdAt:now,demo:true,total:f.charged/100,method:paymentMethod(),lines:lines.map(l=>({kind:l.kind==='product'?'product':'service',category:l.kind,name:l.name,quantity:l.quantity,price:l.unitPriceSatang/100,charge_id:l.id})),transaction_ids:[]};
     for(const line of lines){
-      const before=finance(state,bill.id),tx={id:newId(),payment_id:receipt.payment_id,type:'payment',category:['base','extension','wash100','product'].includes(line.kind)?line.kind:'legacy',method:paymentMethod(),amountSatang:line.amountSatang,bill_id:bill.id,session_id:s?.session_id||null,station_id:s?.station_id||null,charge_id:line.id,receipt_id:receipt.id,command_id:command.id,at:now,employee_id:actor.id,demo:true,...(line.kind==='product'?{product_id:line.product_id,quantity:line.quantity,unitPriceSatang:line.unitPriceSatang,unitCostSatang:line.unitCostSatang}:{})};
+      const before=finance(state,bill.id),tx={id:newId(),payment_id:receipt.payment_id,type:'payment',category:['base','extension','wash100','product'].includes(line.kind)?line.kind:'legacy',method:paymentMethod(),amountSatang:line.amountSatang,bill_id:bill.id,session_id:s?.session_id||null,station_id:s?.station_id||null,charge_id:line.id,receipt_id:receipt.id,command_id:command.id,at:now,employee_id:actor.id,demo:true,...(line.kind==='product'?{product_id:line.product_id,quantity:line.quantity,unitPriceSatang:line.unitPriceSatang,unitCostSatang:Math.round(state.products.find(p=>p.id===line.product_id).cost*100),costCapturedAt:now,costBasis:'sale-time'}:{costSnapshot:structuredClone(line.costSnapshot||null)})};
       state.transactions.push(tx);receipt.transaction_ids.push(tx.id);
       if(line.kind==='product')moveStock(state.products.find(p=>p.id===line.product_id),-line.quantity,'sale','ชำระบิล '+bill.id,tx.id);
       log('payment',s,before,finance(state,bill.id),null,{transaction_id:tx.id,payment_id:receipt.payment_id,bill_id:bill.id,method:tx.method});
@@ -107,13 +108,14 @@ export function execute(original,command,actorId,now=Date.now()) {
   const closeUsage=s=>{const open=s.usageIntervals?.find(i=>i.endedAt===null);if(open)open.endedAt=now;};
   let result={};
   const shiftOutcome=applyShiftCommand(state,command,actor,now,{newId,log});
-  if(shiftOutcome.handled)result=shiftOutcome.result;
+  if(applyCostCommand(state,command,actor,now,{newId,log})){}
+  else if(shiftOutcome.handled)result=shiftOutcome.result;
   else switch(command.type){
     case 'start':{
       const station=getStation(payload.station_id);if(station.session_id)fail('จุดนี้มีคิวอยู่แล้ว','CONFLICT');
       const id=newId(),billId=newId();
-      const s={session_id:id,station_id:station.id,startedAt:now,endsAt:now+1500000,serviceStatus:'active',feeSatang:2000,extensions:0,bill_id:billId,history:[],cancelRequest:null,usageIntervals:[{startedAt:now,endedAt:null}],billingFlow:'session-bill'};
-      state.sessions.push(s);state.bills.push({id:billId,session_id:id,status:'UNPAID',createdAt:now,cancelled:false,charges:[{id:newId(),kind:'base',name:'ค่าบริการหนีบ20',amountSatang:2000,at:now}]});station.session_id=id;
+      const s={session_id:id,station_id:station.id,startedAt:now,endsAt:now+1500000,serviceStatus:'active',feeSatang:state.services.find(s=>s.id==='base').priceSatang,extensions:0,bill_id:billId,history:[],cancelRequest:null,usageIntervals:[{startedAt:now,endedAt:null}],billingFlow:'session-bill'};
+      state.sessions.push(s);state.bills.push({id:billId,session_id:id,status:'UNPAID',createdAt:now,cancelled:false,charges:[serviceCharge(state,'base',now,newId())]});station.session_id=id;
       log('start',s,null,s);result={session_id:id,bill_id:billId};break;
     }
     case 'markUsed':{
@@ -129,8 +131,8 @@ export function execute(original,command,actorId,now=Date.now()) {
     }
     case 'extend':{
       const s=getSession();active(s);const bill=mutableBill(s);
-      const before=structuredClone(s);s.endsAt+=300000;s.extensions++;s.feeSatang+=500;
-      bill.charges.push({id:newId(),kind:'extension',name:'ต่อเวลา 5 นาที',amountSatang:500,at:now});log('extend',s,before,s);result={bill_id:bill.id};break;
+      const before=structuredClone(s);s.endsAt+=300000;s.extensions++;s.feeSatang+=state.services.find(x=>x.id==='extension').priceSatang;
+      bill.charges.push(serviceCharge(state,'extension',now,newId()));log('extend',s,before,s);result={bill_id:bill.id};break;
     }
     case 'finish':{
       const s=getSession();if(s.serviceStatus==='finished'){result={session_id:s.session_id,alreadyFinished:true};break;}
@@ -189,7 +191,7 @@ export function execute(original,command,actorId,now=Date.now()) {
       if(state.products.some(x=>x.id!==product.id&&(x.sku.toLowerCase()===p.sku.trim().toLowerCase()||(p.barcode&&x.barcode.toLowerCase()===p.barcode.trim().toLowerCase()))))fail('รหัสสินค้าหรือบาร์โค้ดซ้ำ');
       const before=editing?structuredClone(product):null;Object.assign(product,{sku:p.sku.trim(),name:p.name.trim(),category:p.category.trim(),barcode:p.barcode.trim(),cost:p.cost,price:p.price});
       if(!editing){state.products.push(product);if(p.stock)moveStock(product,p.stock,'opening','ยอดตั้งต้นสินค้าทดสอบ');}
-      log(command.type,null,before,product);break;
+      state.catalogHistory.push(structuredClone(log(command.type,null,before,product)));break;
     }
     case 'setProductActive':{
       manager();const p=state.products.find(p=>p.id===payload.product_id);if(!p||typeof payload.active!=='boolean')fail('ไม่พบสินค้าหรือสถานะไม่ถูกต้อง');const before=structuredClone(p);p.active=payload.active;log('setProductActive',null,before,p,needReason(payload.reason));break;
@@ -258,7 +260,7 @@ export function migrateLegacy(old){
 
 // Upgrade without rewriting old transaction/audit records or inventing payment methods.
 export function upgradeState(old){
-  if(old.version===5)return validateState(old);
+  if(old.version===5){const state=structuredClone(old);ensureCostState(state);return validateState(state);}
   if(old.version===1)return migrateLegacy(old);
   if(![2,3,4].includes(old.version))fail('ไม่รองรับรุ่นฐานข้อมูล');
   const state=structuredClone(old);state.schemaArchives=[...(state.schemaArchives||[]),{version:old.version,savedAt:Date.now(),state:structuredClone(old)}];state.version=5;ensureShiftState(state);state.revision++;
@@ -268,5 +270,5 @@ export function upgradeState(old){
   for(const b of state.bills){const payments=state.transactions.filter(t=>t.bill_id===b.id&&t.type==='payment');b.everPaid=payments.length>0;b.createdAt??=state.sessions.find(s=>s.session_id===b.session_id)?.startedAt||0;if(payments.length){b.paidAt=payments.at(-1).at;b.paidBy=payments.at(-1).employee_id;b.paymentMethod=new Set(payments.map(t=>t.method||'unknown')).size===1?(payments[0].method||'unknown'):'mixed';b.transaction_ids=payments.map(t=>t.id);}}
   state.cart=state.cart.filter(l=>l.kind==='product');
   state.audit.push({id:newId(),command_id:'schema-v5',type:'schemaUpgrade',at:Date.now(),employee_id:'system-migration',session_id:null,before:{version:old.version},after:{version:5},reason:'เพิ่มระบบกะโดยไม่จัดเงินเก่าเข้ากะหรือสร้างยอดย้อนหลัง'});
-  refreshBills(state);return validateState(state);
+  ensureCostState(state);refreshBills(state);return validateState(state);
 }
