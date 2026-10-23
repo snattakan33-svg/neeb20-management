@@ -1,3 +1,4 @@
+import {ensureInventoryState,inventoryMovement,applyInventoryCommand,validProductMetadata,normalizedSKU,validateInventory} from './inventory.js';
 import {ensureCostState,serviceCharge,applyCostCommand} from './costing.js';
 import {ensureShiftState,applyShiftCommand,assignNewTransactions,validateShifts} from './shifts.js';
 export const STORAGE_KEY = 'neeb20:demo:v5';
@@ -10,7 +11,7 @@ export function createDemo() {
   const state={version:5,demo:true,shifts:[],shiftControl:{enabled:false},revision:0,stations:Array.from({length:12},(_,i)=>({id:i+1,session_id:null})),sessions:[],bills:[],transactions:[],audit:[],commands:[],
     employees:[{id:'staff-01',name:'พนักงานทดสอบ 01',role:'staff'},{id:'manager-01',name:'ผู้จัดการทดสอบ 01',role:'manager'}],
     stockMovements:[],products:[{id:'p1',sku:'DEMO001',category:'อุปกรณ์',active:true,name:'หวีทดสอบ',barcode:'885000000001',cost:15,price:29,stock:20},{id:'p2',sku:'DEMO002',category:'ดูแลผม',active:true,name:'เซรั่มทดสอบ',barcode:'885000000002',cost:45,price:79,stock:10}],cart:[],receipts:[]};
-  ensureCostState(state);state.stockMovements=openingMovements(state.products,0,'ยอดตัวอย่างเริ่มต้น — ไม่ใช่สต๊อกจริง');return state;
+  ensureCostState(state);ensureInventoryState(state);state.stockMovements=openingMovements(state.products,0,'ยอดตัวอย่างเริ่มต้น — ไม่ใช่สต๊อกจริง');return state;
 }
 function openingMovements(products,at,reason){return products.map(p=>({id:newId(),product_id:p.id,quantityDelta:p.stock,before:0,after:p.stock,kind:'opening',reason,at,employee_id:'system-demo',command_id:'opening',transaction_id:null}));}
 export function fail(message,code='INVALID') { const e=new Error(message);e.code=code;throw e; }
@@ -57,7 +58,7 @@ export function execute(original,command,actorId,now=Date.now()) {
   const previous=original.commands.find(c=>c.id===command.id);
   if(previous){if(previous.fingerprint!==fingerprint)fail('รหัสคำสั่งซ้ำแต่เนื้อหาต่างกัน','CONFLICT');return {state:original,result:previous.result,replayed:true};}
   if(command.expectedRevision!==original.revision)fail('ข้อมูลเปลี่ยนแล้ว กรุณาตรวจสอบใหม่และยืนยันอีกครั้ง','CONFLICT');
-  const state=ensureCostState(structuredClone(original)),actor=state.employees.find(e=>e.id===actorId);
+  const state=ensureInventoryState(ensureCostState(structuredClone(original))),actor=state.employees.find(e=>e.id===actorId);
   if(!actor)fail('ไม่พบพนักงาน','FORBIDDEN');
   const manager=()=>{if(actor.role!=='manager')fail('ต้องได้รับอนุมัติจากผู้จัดการ','FORBIDDEN');};
   const getSession=()=>{const s=state.sessions.find(s=>s.session_id===payload.session_id);if(!s)fail('ไม่พบ Session');return s;};
@@ -69,9 +70,9 @@ export function execute(original,command,actorId,now=Date.now()) {
   };
   const paymentMethod=()=>{if(!['cash','qr'].includes(payload.method))fail('เลือกเงินสดหรือ QR');return payload.method;};
   const received=()=>{paymentMethod();if(payload.paymentConfirmed!==true)fail('ต้องยืนยันว่าได้รับชำระแล้วก่อนเริ่ม/เพิ่มบริการหรือขายสินค้า');};
-  const moveStock=(product,delta,kind,reason,transactionId=null)=>{
+  const moveStock=(product,delta,kind,reason,transactionId=null,lotOptions={})=>{
     const before=product.stock;if(!Number.isSafeInteger(delta)||product.stock+delta<0||product.stock+delta>1000000)fail('จำนวนสต๊อกไม่ถูกต้อง');product.stock+=delta;
-    const movement={id:newId(),product_id:product.id,quantityDelta:delta,before,after:product.stock,kind,reason,at:now,employee_id:actor.id,command_id:command.id,transaction_id:transactionId};state.stockMovements.push(movement);log('stock:'+kind,null,{stock:before},{stock:product.stock},reason,{product_id:product.id,movement_id:movement.id});return movement;
+    const movement={id:newId(),product_id:product.id,quantityDelta:delta,before,after:product.stock,kind,reason,at:now,employee_id:actor.id,command_id:command.id,transaction_id:transactionId};inventoryMovement(state,product,movement,lotOptions);state.stockMovements.push(movement);log('stock:'+kind,null,{stock:before},{stock:product.stock},reason,{product_id:product.id,movement_id:movement.id});return movement;
   };
   const mutableBill=s=>{
     const bill=state.bills.find(b=>b.id===s.bill_id);if(bill.cancelled||finance(state,bill.id).paid>0)fail('บิลชำระแล้วหรือยกเลิกแล้ว ไม่สามารถเพิ่ม/แก้รายการได้');
@@ -82,9 +83,9 @@ export function execute(original,command,actorId,now=Date.now()) {
     const lines=billLines(state,bill.id);if(!lines.length)fail('บิลไม่มีรายการ');
     const required=new Map();for(const line of lines.filter(l=>l.kind==='product'))required.set(line.product_id,(required.get(line.product_id)||0)+line.quantity);
     for(const [id,quantity] of required){const p=state.products.find(p=>p.id===id);if(!p||!p.active||p.stock<quantity)fail('สินค้าไม่เปิดขายหรือสต๊อกไม่เพียงพอ กรุณาจัดการรายการในบิล');}
-    const receipt={id:newId(),payment_id:newId(),bill_id:bill.id,session_id:s?.session_id||null,createdAt:now,demo:true,total:f.charged/100,method:paymentMethod(),lines:lines.map(l=>({kind:l.kind==='product'?'product':'service',category:l.kind,name:l.name,quantity:l.quantity,price:l.unitPriceSatang/100,charge_id:l.id})),transaction_ids:[]};
+    const receipt={id:newId(),payment_id:newId(),bill_id:bill.id,session_id:s?.session_id||null,createdAt:now,demo:true,total:f.charged/100,method:paymentMethod(),lines:lines.map(l=>({kind:l.kind==='product'?'product':'service',category:l.kind,name:l.name,sku:l.sku||null,unit:l.unit||null,product_id:l.product_id||null,quantity:l.quantity,price:l.unitPriceSatang/100,charge_id:l.id})),transaction_ids:[]};
     for(const line of lines){
-      const before=finance(state,bill.id),tx={id:newId(),payment_id:receipt.payment_id,type:'payment',category:['base','extension','wash100','product'].includes(line.kind)?line.kind:'legacy',method:paymentMethod(),amountSatang:line.amountSatang,bill_id:bill.id,session_id:s?.session_id||null,station_id:s?.station_id||null,charge_id:line.id,receipt_id:receipt.id,command_id:command.id,at:now,employee_id:actor.id,demo:true,...(line.kind==='product'?{product_id:line.product_id,quantity:line.quantity,unitPriceSatang:line.unitPriceSatang,unitCostSatang:Math.round(state.products.find(p=>p.id===line.product_id).cost*100),costCapturedAt:now,costBasis:'sale-time'}:{costSnapshot:structuredClone(line.costSnapshot||null)})};
+      const before=finance(state,bill.id),tx={id:newId(),payment_id:receipt.payment_id,type:'payment',category:['base','extension','wash100','product'].includes(line.kind)?line.kind:'legacy',method:paymentMethod(),amountSatang:line.amountSatang,bill_id:bill.id,session_id:s?.session_id||null,station_id:s?.station_id||null,charge_id:line.id,receipt_id:receipt.id,command_id:command.id,at:now,employee_id:actor.id,demo:true,...(line.kind==='product'?{product_id:line.product_id,sku:line.sku||state.products.find(p=>p.id===line.product_id).sku,productName:line.name,productCategory:line.category||state.products.find(p=>p.id===line.product_id).category,unit:line.unit||state.products.find(p=>p.id===line.product_id).unit,quantity:line.quantity,unitPriceSatang:line.unitPriceSatang,unitCostSatang:Math.round(state.products.find(p=>p.id===line.product_id).cost*100),costCapturedAt:now,costBasis:'sale-time'}:{costSnapshot:structuredClone(line.costSnapshot||null)})};
       state.transactions.push(tx);receipt.transaction_ids.push(tx.id);
       if(line.kind==='product')moveStock(state.products.find(p=>p.id===line.product_id),-line.quantity,'sale','ชำระบิล '+bill.id,tx.id);
       log('payment',s,before,finance(state,bill.id),null,{transaction_id:tx.id,payment_id:receipt.payment_id,bill_id:bill.id,method:tx.method});
@@ -108,7 +109,8 @@ export function execute(original,command,actorId,now=Date.now()) {
   const closeUsage=s=>{const open=s.usageIntervals?.find(i=>i.endedAt===null);if(open)open.endedAt=now;};
   let result={};
   const shiftOutcome=applyShiftCommand(state,command,actor,now,{newId,log});
-  if(applyCostCommand(state,command,actor,now,{newId,log})){}
+  if(applyInventoryCommand(state,command,actor,now,{newId,log,moveStock})){}
+  else if(applyCostCommand(state,command,actor,now,{newId,log})){}
   else if(shiftOutcome.handled)result=shiftOutcome.result;
   else switch(command.type){
     case 'start':{
@@ -143,7 +145,7 @@ export function execute(original,command,actorId,now=Date.now()) {
       const s=getSession();active(s);const bill=mutableBill(s),product=state.products.find(p=>p.id===payload.product_id),quantity=payload.quantity;
       if(!product||!product.active||!Number.isSafeInteger(quantity)||quantity<1)fail('สินค้า/จำนวนไม่ถูกต้อง');
       const current=billLines(state,bill.id).filter(l=>l.product_id===product.id).reduce((n,l)=>n+l.quantity,0);if(current+quantity>product.stock)fail('จำนวนเกินสต๊อกปัจจุบัน');
-      const before=structuredClone(bill);bill.charges.push({id:newId(),kind:'product',product_id:product.id,sku:product.sku,name:product.name,quantity,unitPriceSatang:Math.round(product.price*100),unitCostSatang:Math.round(product.cost*100),amountSatang:Math.round(product.price*100)*quantity,at:now});
+      const before=structuredClone(bill);bill.charges.push({id:newId(),kind:'product',product_id:product.id,sku:product.sku,unit:product.unit,category:product.category,name:product.name,quantity,unitPriceSatang:Math.round(product.price*100),unitCostSatang:Math.round(product.cost*100),amountSatang:Math.round(product.price*100)*quantity,at:now});
       log('addBillProduct',s,before,bill);break;
     }
     case 'removeBillProduct':{
@@ -187,19 +189,24 @@ export function execute(original,command,actorId,now=Date.now()) {
     case 'editProduct':{
       manager();const p=payload,editing=command.type==='editProduct';
       if(typeof p.sku!=='string'||!p.sku.trim()||p.sku.length>64||typeof p.category!=='string'||!p.category.trim()||p.category.length>80||typeof p.name!=='string'||!p.name.trim()||p.name.length>100||typeof p.barcode!=='string'||p.barcode.length>80||!validMoney(p.cost)||!validMoney(p.price,false)||(!editing&&(!Number.isInteger(p.stock)||p.stock<0||p.stock>1000000)))fail('ข้อมูลสินค้าไม่ถูกต้อง');
-      const product=editing?state.products.find(x=>x.id===p.product_id):{id:newId(),stock:0,active:true};if(!product)fail('ไม่พบสินค้า');
-      if(state.products.some(x=>x.id!==product.id&&(x.sku.toLowerCase()===p.sku.trim().toLowerCase()||(p.barcode&&x.barcode.toLowerCase()===p.barcode.trim().toLowerCase()))))fail('รหัสสินค้าหรือบาร์โค้ดซ้ำ');
-      const before=editing?structuredClone(product):null;Object.assign(product,{sku:p.sku.trim(),name:p.name.trim(),category:p.category.trim(),barcode:p.barcode.trim(),cost:p.cost,price:p.price});
+      const product=editing?state.products.find(x=>x.id===p.product_id):{id:newId(),stock:0,active:true,skuAliases:[]};if(!product)fail('ไม่พบสินค้า');
+      if(state.products.some(x=>x.id!==product.id&&([x.sku,...x.skuAliases].some(sku=>normalizedSKU(sku)===normalizedSKU(p.sku))||(p.barcode&&x.barcode.toLowerCase()===p.barcode.trim().toLowerCase()))))fail('รหัสสินค้าหรือบาร์โค้ดซ้ำ');
+      const beforeProduct=editing?structuredClone(product):null;const metadata=validProductMetadata(p,product);
+      if(editing&&p.stock!==undefined&&p.stock!==product.stock)fail('ห้ามแก้สต๊อกผ่านการแก้ข้อมูลสินค้า ใช้รายการรับ/ปรับ/ตรวจนับ');
+      if(editing&&normalizedSKU(product.sku)!==normalizedSKU(p.sku)){
+        const sold=state.transactions.some(t=>t.product_id===product.id);if(sold&&p.confirmSkuChange!==true)fail('SKU นี้มีประวัติขาย ต้องยืนยันเปลี่ยนรหัสและระบุเหตุผล');needReason(p.reason);product.skuAliases.push(product.sku);
+      }
+      const before=beforeProduct;Object.assign(product,metadata,{sku:p.sku.trim(),name:p.name.trim(),category:p.category.trim(),barcode:p.barcode.trim(),cost:p.cost,price:p.price});
       if(!editing){state.products.push(product);if(p.stock)moveStock(product,p.stock,'opening','ยอดตั้งต้นสินค้าทดสอบ');}
-      state.catalogHistory.push(structuredClone(log(command.type,null,before,product)));break;
+      state.catalogHistory.push(structuredClone(log(command.type,null,before,product,p.reason?.trim()||null)));break;
     }
     case 'setProductActive':{
       manager();const p=state.products.find(p=>p.id===payload.product_id);if(!p||typeof payload.active!=='boolean')fail('ไม่พบสินค้าหรือสถานะไม่ถูกต้อง');const before=structuredClone(p);p.active=payload.active;log('setProductActive',null,before,p,needReason(payload.reason));break;
     }
     case 'receiveStock':
     case 'adjustStock':{
-      if(command.type==='adjustStock')manager();const p=state.products.find(p=>p.id===payload.product_id),delta=payload.quantityDelta,reason=needReason(payload.reason);
-      if(!p||!Number.isSafeInteger(delta)||!delta||(command.type==='receiveStock'&&delta<0))fail('จำนวนรับ/ปรับสต๊อกไม่ถูกต้อง');moveStock(p,delta,command.type,reason);break;
+      manager();const p=state.products.find(p=>p.id===payload.product_id),delta=payload.quantityDelta,reason=needReason(payload.reason);
+      if(!p||!Number.isSafeInteger(delta)||!delta||(command.type==='receiveStock'&&delta<0))fail('จำนวนรับ/ปรับสต๊อกไม่ถูกต้อง');if(typeof (payload.lotReference||'')!=='string'||(payload.lotReference||'').length>100)fail('เลขอ้างอิงล็อตไม่ถูกต้อง');moveStock(p,delta,command.type,reason,null,{unitCostSatang:payload.unitCostSatang,lotReference:payload.lotReference});break;
     }
     case 'returnProduct':{
       manager();paymentMethod();if(payload.refundConfirmed!==true)fail('ต้องยืนยันคืนเงินแล้ว');
@@ -209,20 +216,20 @@ export function execute(original,command,actorId,now=Date.now()) {
       const refundedMoney=state.transactions.filter(t=>t.type==='refund'&&t.original_transaction_id===tx.id).reduce((n,t)=>n+t.amountSatang,0);
       if(already+quantity>tx.quantity||quantity*tx.unitPriceSatang>tx.amountSatang-refundedMoney)fail('จำนวนคืนเกินจำนวนที่ขายหรือคืนไปแล้ว');
       const product=state.products.find(p=>p.id===tx.product_id);if(!product)fail('ไม่พบสินค้า');
-      const refund={id:newId(),type:'refund',category:'product',method:paymentMethod(),amountSatang:quantity*tx.unitPriceSatang,product_id:product.id,quantity,original_transaction_id:tx.id,receipt_id:tx.receipt_id,bill_id:tx.bill_id||null,session_id:tx.session_id||null,at:now,employee_id:actor.id,command_id:command.id,demo:true,reason,restock:payload.restock};
-      state.transactions.push(refund);if(payload.restock)moveStock(product,quantity,'return',reason,refund.id);
+      const refund={id:newId(),type:'refund',category:'product',method:paymentMethod(),amountSatang:quantity*tx.unitPriceSatang,product_id:product.id,sku:tx.sku||null,productName:tx.productName||null,unit:tx.unit||null,quantity,original_transaction_id:tx.id,receipt_id:tx.receipt_id,bill_id:tx.bill_id||null,session_id:tx.session_id||null,at:now,employee_id:actor.id,command_id:command.id,demo:true,reason,restock:payload.restock};
+      state.transactions.push(refund);if(payload.restock)moveStock(product,quantity,'return',reason,refund.id,{unitCostSatang:tx.unitCostSatang});
       log('refundProduct',null,{sold:tx.quantity,returned:already},{returned:already+quantity,amountSatang:refund.amountSatang},reason,{transaction_id:refund.id,approvedBy:actor.id});result={transaction_id:refund.id};break;
     }
     case 'addCart':{
       const p=state.products.find(p=>p.id===payload.product_id);if(!p||!p.active)fail('สินค้าไม่เปิดขาย');const line=state.cart.find(l=>l.kind==='product'&&l.id===p.id);
-      if((line?.quantity||0)>=p.stock)fail('จำนวนเกินสต๊อกทดสอบ');if(line)line.quantity++;else state.cart.push({kind:'product',id:p.id,name:p.name,cost:p.cost,price:p.price,quantity:1});
+      if((line?.quantity||0)>=p.stock)fail('จำนวนเกินสต๊อกทดสอบ');if(line)line.quantity++;else state.cart.push({kind:'product',id:p.id,name:p.name,sku:p.sku,unit:p.unit,category:p.category,cost:p.cost,price:p.price,quantity:1});
       log('addCart',null,null,{product_id:p.id});break;
     }
     case 'removeCart':{const before=structuredClone(state.cart);state.cart=state.cart.filter(l=>l.kind==='service'?l.bill_id!==payload.line_id:l.id!==payload.line_id);log('removeCart',null,before,state.cart);break;}
     case 'checkout':{
       const lines=cartLines(state);if(!lines.length)fail('ตะกร้ายังว่างหรือชำระแล้ว');if(lines.some(l=>l.kind!=='product'))fail('ชำระบิล Station ผ่านปุ่มคิดเงินของ Session');
       for(const line of lines){const p=state.products.find(p=>p.id===line.id);if(!p||p.price!==line.price)fail('ราคาสินค้าเปลี่ยน กรุณานำออกแล้วเพิ่มใหม่');}
-      const bill={id:newId(),session_id:null,type:'pos',status:'UNPAID',createdAt:now,cancelled:false,charges:lines.map(l=>({id:newId(),kind:'product',product_id:l.id,name:l.name,quantity:l.quantity,unitPriceSatang:Math.round(l.price*100),unitCostSatang:Math.round(l.cost*100),amountSatang:Math.round(l.price*100)*l.quantity,at:now}))};
+      const bill={id:newId(),session_id:null,type:'pos',status:'UNPAID',createdAt:now,cancelled:false,charges:lines.map(l=>({id:newId(),kind:'product',product_id:l.id,sku:l.sku||state.products.find(p=>p.id===l.id).sku,unit:l.unit,category:l.category,name:l.name,quantity:l.quantity,unitPriceSatang:Math.round(l.price*100),unitCostSatang:Math.round(l.cost*100),amountSatang:Math.round(l.price*100)*l.quantity,at:now}))};
       state.bills.push(bill);result=settleBill(bill,null);state.cart=[];break;
     }
     case 'refund':{
@@ -239,7 +246,7 @@ export function validateState(state){
   for(const [items,key] of [[state.stations,'id'],[state.sessions,'session_id'],[state.bills,'id'],[state.transactions,'id'],[state.commands,'id']])if(new Set(items.map(i=>i[key])).size!==items.length)fail('พบรหัสซ้ำ');
   for(const t of state.stations){const s=state.sessions.find(s=>s.session_id===t.session_id);if(t.session_id&&(!s||s.station_id!==t.id||s.serviceStatus!=='active'))fail('Station กับ Session ไม่ตรงกัน');}
   for(const s of state.sessions){if(state.bills.filter(b=>b.session_id===s.session_id).length!==1||!state.bills.some(b=>b.id===s.bill_id&&b.session_id===s.session_id))fail('Session ไม่มีบิล');if(s.serviceStatus==='active'&&state.stations.find(t=>t.id===s.station_id)?.session_id!==s.session_id)fail('Session ไม่มี Station');}
-  validateShifts(state);return state;
+  validateShifts(state);validateInventory(state);return state;
 }
 // Keep the full original archive; old receipts are not invented as new payments.
 export function migrateLegacy(old){
@@ -255,12 +262,12 @@ export function migrateLegacy(old){
   if(old.version!==1||!Array.isArray(old.stations)||old.stations.length!==12)fail('ไม่สามารถนำเข้าข้อมูลเก่าได้');
   old.stations.forEach(t=>{if(t.session)importSession(t.session,t.id);});
   for(const l of old.cart||[]){if(l.kind==='service')importSession(l,Number(l.name.match(/\d+/)?.[0])||1,true);else state.cart.push(structuredClone(l));}
-  state.products=old.products.map((p,i)=>({...structuredClone(p),sku:p.sku||`LEGACY${i+1}`,category:p.category||'ข้อมูลเก่า',active:p.active!==false}));state.stockMovements=openingMovements(state.products,Date.now(),'นำเข้าสินค้าทดสอบ v1');refreshBills(state);validateState(state);return state;
+  state.products=old.products.map((p,i)=>({...structuredClone(p),sku:p.sku||`LEGACY${i+1}`,category:p.category||'ข้อมูลเก่า',active:p.active!==false}));state.inventoryLots=[];ensureInventoryState(state);state.stockMovements=openingMovements(state.products,Date.now(),'นำเข้าสินค้าทดสอบ v1');refreshBills(state);validateState(state);return state;
 }
 
 // Upgrade without rewriting old transaction/audit records or inventing payment methods.
 export function upgradeState(old){
-  if(old.version===5){const state=structuredClone(old);ensureCostState(state);return validateState(state);}
+  if(old.version===5){const state=structuredClone(old);ensureCostState(state);ensureInventoryState(state);return validateState(state);}
   if(old.version===1)return migrateLegacy(old);
   if(![2,3,4].includes(old.version))fail('ไม่รองรับรุ่นฐานข้อมูล');
   const state=structuredClone(old);state.schemaArchives=[...(state.schemaArchives||[]),{version:old.version,savedAt:Date.now(),state:structuredClone(old)}];state.version=5;ensureShiftState(state);state.revision++;
@@ -270,5 +277,5 @@ export function upgradeState(old){
   for(const b of state.bills){const payments=state.transactions.filter(t=>t.bill_id===b.id&&t.type==='payment');b.everPaid=payments.length>0;b.createdAt??=state.sessions.find(s=>s.session_id===b.session_id)?.startedAt||0;if(payments.length){b.paidAt=payments.at(-1).at;b.paidBy=payments.at(-1).employee_id;b.paymentMethod=new Set(payments.map(t=>t.method||'unknown')).size===1?(payments[0].method||'unknown'):'mixed';b.transaction_ids=payments.map(t=>t.id);}}
   state.cart=state.cart.filter(l=>l.kind==='product');
   state.audit.push({id:newId(),command_id:'schema-v5',type:'schemaUpgrade',at:Date.now(),employee_id:'system-migration',session_id:null,before:{version:old.version},after:{version:5},reason:'เพิ่มระบบกะโดยไม่จัดเงินเก่าเข้ากะหรือสร้างยอดย้อนหลัง'});
-  ensureCostState(state);refreshBills(state);return validateState(state);
+  ensureCostState(state);ensureInventoryState(state);refreshBills(state);return validateState(state);
 }
