@@ -57,7 +57,7 @@ test('server upgrades v2 SQLite once without erasing old records or inventing mo
  const directory=await mkdtemp(join(tmpdir(),'neeb20-upgrade-')),path=join(directory,'demo.sqlite');let store=new DemoStore(path);
  try{
   const legacy=store.read();legacy.version=2;legacy.transactions=[{id:'legacy-receipt-payment',type:'payment',amountSatang:2000,at:1000,bill_id:null,session_id:null}];delete legacy.stockMovements;
-  store.db.prepare('UPDATE demo_state SET body=? WHERE id=1').run(JSON.stringify(legacy));store.close();store=new DemoStore(path);const migrated=store.read();assert.equal(migrated.version,4);assert.deepEqual(migrated.transactions,legacy.transactions);assert.deepEqual(migrated.schemaArchives.at(-1).state,legacy);
+  store.db.prepare('UPDATE demo_state SET body=? WHERE id=1').run(JSON.stringify(legacy));store.close();store=new DemoStore(path);const migrated=store.read();assert.equal(migrated.version,5);assert.deepEqual(migrated.transactions,legacy.transactions);assert.deepEqual(migrated.schemaArchives.at(-1).state,legacy);
   store.close();store=new DemoStore(path);assert.deepEqual(store.read(),migrated);
  }finally{store.close();await rm(directory,{recursive:true,force:true});}
 });
@@ -71,4 +71,17 @@ test('occupied port never upgrades or mutates the database of an already running
   let error='';child.stderr.on('data',chunk=>error+=chunk);assert.equal(await new Promise((resolve,reject)=>{child.on('exit',resolve);child.on('error',reject);}),1);assert.match(error,/Port already in use/);
   const raw=new DatabaseSync(path);try{assert.deepEqual(JSON.parse(raw.prepare('SELECT body FROM demo_state WHERE id=1').get().body),old);}finally{raw.close();}
  }finally{await new Promise(resolve=>occupied.close(resolve));occupantStore.close();await rm(directory,{recursive:true,force:true});}
+});
+test('HTTP shift concurrency, idempotent drawer/close, approval, business errors and persistence',async()=>{
+ const directory=await mkdtemp(join(tmpdir(),'neeb20-shift-api-')),path=join(directory,'demo.sqlite');let store=new DemoStore(path);const server=createServer(store);await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const base=`http://127.0.0.1:${server.address().port}`;
+ const post=async command=>{const r=await fetch(base+'/api/commands',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({command,actorId:command.type==='approveShift'?'manager-01':'staff-01'})});return {status:r.status,body:await r.json()};};
+ const cmd=(id,type,payload)=>({id,type,payload,expectedRevision:store.read().revision});
+ try{
+  const open=cmd('open-a','openShift',{employee_id:'staff-01',openingFloatSatang:10000}),[a,b]=await Promise.all([post(open),post({...open,id:'open-b'})]);assert.deepEqual([a.status,b.status].sort(),[200,409]);const shift=store.read().shifts[0];
+  const start=await post(cmd('start','start',{station_id:1}));await post(cmd('pay','payBill',{session_id:start.body.result.session_id,expectedStationId:1,method:'cash',paymentConfirmed:true}));
+  const movement=cmd('in','drawerMovement',{shift_id:shift.id,direction:'in',amountSatang:1000,reason:'เติมทดสอบ'});assert.equal((await post(movement)).status,200);assert.equal((await post(movement)).body.replayed,true);
+  const close=cmd('close','submitShift',{shift_id:shift.id,countedCashSatang:13000,verifiedQRSatang:0,retainedFloatSatang:10000,handedOverSatang:3000});assert.equal((await post(close)).status,200);assert.equal((await post(close)).body.replayed,true);assert.equal((await post(cmd('approve','approveShift',{shift_id:shift.id,reason:'ตรวจยอดตรง'}))).status,200);
+  await post(cmd('cart','addCart',{product_id:'p1'}));const missing=await post(cmd('no-shift','checkout',{method:'cash',paymentConfirmed:true}));assert.equal(missing.status,400);assert.equal(missing.body.code,'SHIFT_REQUIRED');
+  const report=await (await fetch(base+'/api/reports?mode=all')).json();assert.equal(report.summary.net,2000);assert.equal(report.shifts[0].approvedSnapshot.status,'MATCH');const before=store.read();await new Promise(resolve=>server.close(resolve));store.close();store=new DemoStore(path);assert.deepEqual(store.read(),before);assert.equal(store.read().shifts[0].cashMovements.length,1);
+ }finally{if(server.listening)await new Promise(resolve=>server.close(resolve));store.close();await rm(directory,{recursive:true,force:true});}
 });

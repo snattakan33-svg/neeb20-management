@@ -1,6 +1,6 @@
 # แนวทางระบบจริงและฐานข้อมูล
 
-สถานะปัจจุบันเป็น **Session Bill v4** ให้ใช้หัวข้อ Session Bill v4 ท้ายเอกสารสำหรับ Flow ปัจจุบัน ส่วน Prepaid v3 และหัวข้อเก่าคงไว้เป็นประวัติการออกแบบเพื่ออ้างอิง ไม่ใช่ขั้นตอนปัจจุบัน
+สถานะปัจจุบันเป็น **Income / Reconciliation v5** ซึ่งคง Flow บิล Session Bill v4 ให้ใช้หัวข้อ v5 และ v4 ท้ายเอกสาร ส่วน Prepaid v3 และหัวข้อเก่าเป็นประวัติการออกแบบ ไม่ใช่ Flow รับเงินปัจจุบัน
 
 ## เทคโนโลยีที่เสนอ
 
@@ -129,3 +129,19 @@ v2/v3 → v4 เก็บต้นฉบับใน schemaArchives โดยไ
 ### ข้อจำกัดที่ยังอยู่
 
 Demo roles ยังไม่ใช่ authenticated identities, SQLite state JSON ยังเป็นโครงทดลอง, ไม่มี bank verification, ไม่มี production publish/HTTPS หรืออุปกรณ์จริง การคืนเงินทั้งบิลไม่ restock เอง แต่จำกัด refund ต้นทางทั้งจำนวน/เงินไม่ให้คืนสินค้าเพื่อคืนเงินซ้ำ หากสินค้ากลับมาหลัง refund ให้ผู้จัดการปรับ stock พร้อมเหตุผล รุ่นนี้ยังไม่มี workflow แก้บิล PAID เพื่อเพิ่มรายการ/เรียกเก็บเพิ่ม
+
+## Income / Reconciliation v5 — ปัจจุบัน (คง Session Bill v4)
+
+เพิ่ม shifts.js เป็น pure command/report layer แยกจาก Station commands เดิม domain.execute ใช้ revision/idempotency/actor boundary เดียวกัน แล้ว assignNewTransactions ผูก ledger ใหม่เข้ากะ OPEN ก่อน commit SQLite เดียวกัน ถ้ากะต้องมีแต่ไม่เปิดหรือ cash ไม่พอคืนเงิน จะ rollback รายการเงิน/stock/บิลด้วย error เชิงธุรกิจ ไม่ทำ partial commit
+
+One shared drawer: หนึ่ง OPEN shift ต่อเวลา Submit ปิด period และตรึง transaction_ids/cashMovements; กะถัดไปเปิดได้ก่อน approve กะเก่า แต่ assignment ไม่ย้ายข้ามกะ Approval เก็บ approvedSnapshot และ manager/time; correction ต่อท้ายเฉพาะยอดนับ/ยอดตรวจ QR/ยอดส่ง ไม่แก้ revenue หรือ snapshot เดิม การอนุมัติผลต่างพร้อมเหตุผลไม่เปลี่ยนสถานะตรวจเงินให้เป็น MATCH
+
+สูตร expectedCash = float + cashPayments − cashRefunds + drawerIn − drawerOut; expectedHandover = expectedCash − retainedFloat; countDifference และ handoverDifference แยกกัน ไม่บวก short ซ้ำ QR verified net signed เพื่อรองรับ refund-only shift ผลต่างทิศตรงข้ามเป็น PENDING แม้ net difference =0
+
+Report API เพิ่ม weekly ISO, all-history, employee_id, charts day/week/month, paidBillCount, current unpaid, employee aggregates, shift summaries, unassigned ledger และ anomaly review ป้าย wash100 ใช้ transaction category จริงเท่านั้น ไม่สร้างรายได้จากโมดูลที่ยังไม่มี Daily transactions และ shift periods เลือกต่างมุมมอง จึงไม่ควรบวกเป็นยอดขายซ้ำ
+
+QR original transaction มี staff_confirmation และ UNVERIFIED bank flag; manual bank reconciliation/approval อยู่ใน shift.bankVerification ไม่อัปเดตให้เสมือนธนาคารรับรอง เก็บหลักฐานอ้างอิงที่พนักงานพิมพ์ ไม่เก็บ OTP/password
+
+v4 → v5 archive เดิมและสร้าง arrays shifts/shiftControl โดยไม่เดาย้อน assignment เงินเก่าเป็น unassigned; historical shift ต้อง manager ระบุช่วง/ยอดตามหลักฐาน ไม่ซ้อนและไม่มี ID ซ้ำ Unknown-method history ยังคง pending ไม่อนุมัติโดยเดาช่องทาง
+
+ข้อมูลตัวอย่างสร้างจาก execute commands ใน demo-scenarios.js ไปฐาน reconciliation-sample.sqlite โดย reserve ไฟล์ด้วย wx ปฏิเสธเขียนทับ แยกจาก demo.sqlite ไม่มี sample injected ระหว่าง startup ปกติ ยังคงข้อจำกัด Demo identity, JSON SQLite schema, หนึ่งลิ้นชัก และไม่มี bank automation/อุปกรณ์จริง

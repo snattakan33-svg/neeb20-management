@@ -4,7 +4,7 @@ import {fileURLToPath} from 'node:url';
 import {resolve} from 'node:path';
 import {makeReport} from './src/reports.js';
 import {DemoStore} from './server/store.js';
-const files = {'/':'index.html','/src/app.js':'src/app.js','/src/domain.js':'src/domain.js','/src/reports.js':'src/reports.js','/src/style.css':'src/style.css','/NEEB20-DEMO.html':'NEEB20-DEMO.html'};
+const files = {'/':'index.html','/src/app.js':'src/app.js','/src/domain.js':'src/domain.js','/src/reports.js':'src/reports.js','/src/shifts.js':'src/shifts.js','/src/style.css':'src/style.css','/NEEB20-DEMO.html':'NEEB20-DEMO.html'};
 const types = {html:'text/html; charset=utf-8',js:'text/javascript; charset=utf-8',css:'text/css; charset=utf-8'};
 export function createServer(store){
   return http.createServer(async (req,res) => {
@@ -27,7 +27,7 @@ export function createServer(store){
       if(!['GET','HEAD'].includes(req.method)){send(405,{error:'Method not allowed'});return;}
       const file=files[pathname];if(!file){send(404,{error:'Not found'});return;}
       const body=await readFile(new URL(file,import.meta.url));res.writeHead(200,{'Content-Type':types[file.split('.').pop()],'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});res.end(req.method==='HEAD'?undefined:body);
-    }catch(e){send(e.code==='FORBIDDEN'?403:e.code==='CONFLICT'?409:e.code==='INVALID'?400:500,{error:e.code?e.message:'ไม่สามารถบันทึกข้อมูลได้ กรุณาลองคำสั่งเดิมอีกครั้ง',code:e.code||'SERVER'});}
+    }catch(e){send(e.code==='FORBIDDEN'?403:e.code==='CONFLICT'?409:['INVALID','PAYMENT_REQUIRED','SHIFT_REQUIRED'].includes(e.code)?400:500,{error:e.code?e.message:'ไม่สามารถบันทึกข้อมูลได้ กรุณาลองคำสั่งเดิมอีกครั้ง',code:e.code||'SERVER'});}
   });
 }
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)){

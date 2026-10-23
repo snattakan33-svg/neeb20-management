@@ -1,10 +1,12 @@
-export const STORAGE_KEY = 'neeb20:demo:v4';
-export const PREVIOUS_KEY = 'neeb20:demo:v3';
-export const OLDER_KEY = 'neeb20:demo:v2';
+import {ensureShiftState,applyShiftCommand,assignNewTransactions,validateShifts} from './shifts.js';
+export const STORAGE_KEY = 'neeb20:demo:v5';
+export const PREVIOUS_KEY = 'neeb20:demo:v4';
+export const OLDER_KEY = 'neeb20:demo:v3';
+export const ANCIENT_KEY = 'neeb20:demo:v2';
 export const LEGACY_KEY = 'neeb20:demo:v1';
 export const newId = () => Array.from(crypto.getRandomValues(new Uint8Array(16)), n=>n.toString(16).padStart(2,'0')).join('');
 export function createDemo() {
-  const state={version:4,demo:true,revision:0,stations:Array.from({length:12},(_,i)=>({id:i+1,session_id:null})),sessions:[],bills:[],transactions:[],audit:[],commands:[],
+  const state={version:5,demo:true,shifts:[],shiftControl:{enabled:false},revision:0,stations:Array.from({length:12},(_,i)=>({id:i+1,session_id:null})),sessions:[],bills:[],transactions:[],audit:[],commands:[],
     employees:[{id:'staff-01',name:'พนักงานทดสอบ 01',role:'staff'},{id:'manager-01',name:'ผู้จัดการทดสอบ 01',role:'manager'}],
     stockMovements:[],products:[{id:'p1',sku:'DEMO001',category:'อุปกรณ์',active:true,name:'หวีทดสอบ',barcode:'885000000001',cost:15,price:29,stock:20},{id:'p2',sku:'DEMO002',category:'ดูแลผม',active:true,name:'เซรั่มทดสอบ',barcode:'885000000002',cost:45,price:79,stock:10}],cart:[],receipts:[]};
   state.stockMovements=openingMovements(state.products,0,'ยอดตัวอย่างเริ่มต้น — ไม่ใช่สต๊อกจริง');return state;
@@ -81,7 +83,7 @@ export function execute(original,command,actorId,now=Date.now()) {
     for(const [id,quantity] of required){const p=state.products.find(p=>p.id===id);if(!p||!p.active||p.stock<quantity)fail('สินค้าไม่เปิดขายหรือสต๊อกไม่เพียงพอ กรุณาจัดการรายการในบิล');}
     const receipt={id:newId(),payment_id:newId(),bill_id:bill.id,session_id:s?.session_id||null,createdAt:now,demo:true,total:f.charged/100,method:paymentMethod(),lines:lines.map(l=>({kind:l.kind==='product'?'product':'service',category:l.kind,name:l.name,quantity:l.quantity,price:l.unitPriceSatang/100,charge_id:l.id})),transaction_ids:[]};
     for(const line of lines){
-      const before=finance(state,bill.id),tx={id:newId(),payment_id:receipt.payment_id,type:'payment',category:['base','extension','product'].includes(line.kind)?line.kind:'legacy',method:paymentMethod(),amountSatang:line.amountSatang,bill_id:bill.id,session_id:s?.session_id||null,station_id:s?.station_id||null,charge_id:line.id,receipt_id:receipt.id,command_id:command.id,at:now,employee_id:actor.id,demo:true,...(line.kind==='product'?{product_id:line.product_id,quantity:line.quantity,unitPriceSatang:line.unitPriceSatang,unitCostSatang:line.unitCostSatang}:{})};
+      const before=finance(state,bill.id),tx={id:newId(),payment_id:receipt.payment_id,type:'payment',category:['base','extension','wash100','product'].includes(line.kind)?line.kind:'legacy',method:paymentMethod(),amountSatang:line.amountSatang,bill_id:bill.id,session_id:s?.session_id||null,station_id:s?.station_id||null,charge_id:line.id,receipt_id:receipt.id,command_id:command.id,at:now,employee_id:actor.id,demo:true,...(line.kind==='product'?{product_id:line.product_id,quantity:line.quantity,unitPriceSatang:line.unitPriceSatang,unitCostSatang:line.unitCostSatang}:{})};
       state.transactions.push(tx);receipt.transaction_ids.push(tx.id);
       if(line.kind==='product')moveStock(state.products.find(p=>p.id===line.product_id),-line.quantity,'sale','ชำระบิล '+bill.id,tx.id);
       log('payment',s,before,finance(state,bill.id),null,{transaction_id:tx.id,payment_id:receipt.payment_id,bill_id:bill.id,method:tx.method});
@@ -104,7 +106,9 @@ export function execute(original,command,actorId,now=Date.now()) {
   };
   const closeUsage=s=>{const open=s.usageIntervals?.find(i=>i.endedAt===null);if(open)open.endedAt=now;};
   let result={};
-  switch(command.type){
+  const shiftOutcome=applyShiftCommand(state,command,actor,now,{newId,log});
+  if(shiftOutcome.handled)result=shiftOutcome.result;
+  else switch(command.type){
     case 'start':{
       const station=getStation(payload.station_id);if(station.session_id)fail('จุดนี้มีคิวอยู่แล้ว','CONFLICT');
       const id=newId(),billId=newId();
@@ -224,16 +228,16 @@ export function execute(original,command,actorId,now=Date.now()) {
     }
     default:fail('ไม่รองรับคำสั่ง');
   }
-  refreshBills(state);state.revision++;state.commands.push({id:command.id,fingerprint,result});validateState(state);
+  assignNewTransactions(state,original.transactions.length,actor,now);refreshBills(state);state.revision++;state.commands.push({id:command.id,fingerprint,result});validateState(state);
   return {state,result,replayed:false};
 }
 export function validateState(state){
-  if(state.version!==4||state.stations.length!==12)fail('รูปแบบข้อมูลไม่ถูกต้อง');
+  if(state.version!==5||state.stations.length!==12)fail('รูปแบบข้อมูลไม่ถูกต้อง');
   for(const key of ['sessions','bills','transactions','audit','commands','employees','products','cart','receipts','stockMovements'])if(!Array.isArray(state[key]))fail('ข้อมูลไม่ครบ');
   for(const [items,key] of [[state.stations,'id'],[state.sessions,'session_id'],[state.bills,'id'],[state.transactions,'id'],[state.commands,'id']])if(new Set(items.map(i=>i[key])).size!==items.length)fail('พบรหัสซ้ำ');
   for(const t of state.stations){const s=state.sessions.find(s=>s.session_id===t.session_id);if(t.session_id&&(!s||s.station_id!==t.id||s.serviceStatus!=='active'))fail('Station กับ Session ไม่ตรงกัน');}
   for(const s of state.sessions){if(state.bills.filter(b=>b.session_id===s.session_id).length!==1||!state.bills.some(b=>b.id===s.bill_id&&b.session_id===s.session_id))fail('Session ไม่มีบิล');if(s.serviceStatus==='active'&&state.stations.find(t=>t.id===s.station_id)?.session_id!==s.session_id)fail('Session ไม่มี Station');}
-  return state;
+  validateShifts(state);return state;
 }
 // Keep the full original archive; old receipts are not invented as new payments.
 export function migrateLegacy(old){
@@ -254,15 +258,15 @@ export function migrateLegacy(old){
 
 // Upgrade without rewriting old transaction/audit records or inventing payment methods.
 export function upgradeState(old){
-  if(old.version===4)return validateState(old);
+  if(old.version===5)return validateState(old);
   if(old.version===1)return migrateLegacy(old);
-  if(![2,3].includes(old.version))fail('ไม่รองรับรุ่นฐานข้อมูล');
-  const state=structuredClone(old);state.schemaArchives=[...(state.schemaArchives||[]),{version:old.version,savedAt:Date.now(),state:structuredClone(old)}];state.version=4;state.revision++;
+  if(![2,3,4].includes(old.version))fail('ไม่รองรับรุ่นฐานข้อมูล');
+  const state=structuredClone(old);state.schemaArchives=[...(state.schemaArchives||[]),{version:old.version,savedAt:Date.now(),state:structuredClone(old)}];state.version=5;ensureShiftState(state);state.revision++;
   state.products=state.products.map((p,i)=>({...p,sku:p.sku||`LEGACY${i+1}`,category:p.category||'ข้อมูลเก่า',active:p.active!==false}));
   state.stockMovements ||= openingMovements(state.products,Date.now(),'ยอดยกมาจากข้อมูลทดสอบเก่า');
   state.sessions=state.sessions.map(s=>({...s,usageIntervals:s.usageIntervals||[],legacyPostpaid:s.legacyPostpaid??old.version===2}));
-  for(const b of state.bills){const payments=state.transactions.filter(t=>t.bill_id===b.id&&t.type==='payment');b.everPaid=payments.length>0;b.createdAt=state.sessions.find(s=>s.session_id===b.session_id)?.startedAt||0;if(payments.length){b.paidAt=payments.at(-1).at;b.paidBy=payments.at(-1).employee_id;b.paymentMethod=new Set(payments.map(t=>t.method||'unknown')).size===1?(payments[0].method||'unknown'):'mixed';b.transaction_ids=payments.map(t=>t.id);}}
+  for(const b of state.bills){const payments=state.transactions.filter(t=>t.bill_id===b.id&&t.type==='payment');b.everPaid=payments.length>0;b.createdAt??=state.sessions.find(s=>s.session_id===b.session_id)?.startedAt||0;if(payments.length){b.paidAt=payments.at(-1).at;b.paidBy=payments.at(-1).employee_id;b.paymentMethod=new Set(payments.map(t=>t.method||'unknown')).size===1?(payments[0].method||'unknown'):'mixed';b.transaction_ids=payments.map(t=>t.id);}}
   state.cart=state.cart.filter(l=>l.kind==='product');
-  state.audit.push({id:newId(),command_id:'schema-v4',type:'schemaUpgrade',at:Date.now(),employee_id:'system-migration',session_id:null,before:{version:old.version},after:{version:4},reason:'บิลหลักต่อ Session; เก็บรายรับเก่าโดยไม่สร้างเงินย้อนหลัง'});
+  state.audit.push({id:newId(),command_id:'schema-v5',type:'schemaUpgrade',at:Date.now(),employee_id:'system-migration',session_id:null,before:{version:old.version},after:{version:5},reason:'เพิ่มระบบกะโดยไม่จัดเงินเก่าเข้ากะหรือสร้างยอดย้อนหลัง'});
   refreshBills(state);return validateState(state);
 }
