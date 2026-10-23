@@ -1,5 +1,7 @@
 # แนวทางระบบจริงและฐานข้อมูล
 
+สถานะปัจจุบันเป็น **Prepaid v3** ให้ใช้หัวข้อ Prepaid v3 ท้ายเอกสารสำหรับขั้นตอนรับเงินปัจจุบัน หัวข้อก่อนหน้านั้นเก็บแนวทางฐานข้อมูลและประวัติการออกแบบก่อนปรับ Prepaid เพื่ออ้างอิง ไม่ใช่คำสั่งให้กลับไปใช้ postpaid
+
 ## เทคโนโลยีที่เสนอ
 
 ต้นแบบปัจจุบันมี Server Demo (Node built-in SQLite) และ Local Demo (localStorage แยกเครื่อง) ใช้ command handler ชุดเดียวกันใน domain.js ทุกข้อมูลยังเป็นข้อมูลทดสอบ ไม่ควรใช้ฐาน demo หรือ localStorage เป็นฐานขายจริง
@@ -67,3 +69,37 @@
 4. ทดสอบ clock skew และใช้ server time offset สำหรับ countdown บนหลายเครื่อง เพิ่ม payment provider verification/reconciliation ก่อนเชื่อมเงินจริง และแยก key/database/network สำหรับ production จาก demo โดยเด็ดขาด
 5. ตอนนี้มี shared POS cart หนึ่งชุด ถ้าต้องการหลายแคชเชียร์แยกบิล ให้เพิ่ม draft order ownership และ register ID ไม่ใช้ shared cart เดียว
 6. ถ้าขยายไปหลาย server instances ใช้ PostgreSQL/transactional normalized schema; ไม่แชร์ไฟล์ SQLite ข้ามเครื่องหรือใช้ Sheets เป็น concurrent transaction engine
+
+## Prepaid v3 (แทนขั้นตอนรับเงินบริการแบบ postpaid เดิม)
+
+### Atomic command และ ledger
+
+- `start` ต้อง `{station_id, method:cash|qr, paymentConfirmed:true}`; ตรวจจุดว่างแล้วสร้าง Session+บิล+base charge+payment 2,000 สตางค์+receipt+Audit พร้อมจับเวลาที่ `now` ใน SQLite transaction เดียว ไม่เก็บ draft Session ก่อนรับเงิน การกดยกเลิก modal ก่อนยืนยันไม่มีค่าใช้จ่ายหรือ entity ที่ต้องย้อนเงิน
+- `extend` ต้องยืนยันรับ 500 สตางค์ สร้าง charge/payment ประเภท extension เพิ่ม deadline เดิม 300,000ms โดยไม่สร้าง Session/บิลใหม่
+- `finish` ปล่อย Station และปิดช่วงใช้งานเท่านั้น คิว prepaid ไม่มีหนี้เข้า POS/ไม่มี payment ใหม่ `restore` ใช้ Session/บิล/deadline เดิมและเริ่มช่วงใช้จริงใหม่เมื่อพนักงานยืนยัน
+- Session เก็บ `usageIntervals` แยกจากเวลาจับเวลาหลังจ่าย พนักงาน `markUsed` บันทึกการเริ่มใช้จริง การยกเลิก `unused:true` ถูกปฏิเสธถ้ามีช่วงใช้จริงแล้ว ยังต้องให้ผู้จัดการตรวจข้อเท็จจริง ไม่สามารถพิสูจน์การใช้จาก browser โดยลำพัง
+- ผู้จัดการ `approveCancel` ระบุ unused, refundAmountSatang, reason; หาก unused ต้องคืนเต็มยอดรับสุทธิ การยกเลิก+refund อยู่ใน transaction เดียว ไม่มี intermediate state ที่ยกเลิกแล้วลืมคืนเงิน หากใช้แล้วคืน 0..net ตามนโยบายที่ผู้จัดการระบุ
+- `refundSession` ผูกกับ original payment IDs แยกเป็นหลาย refund ถ้าครอบหลายรายการ เช่นคืน base+extension; ไม่แก้/ลบ payment เดิม method ใน refund คือช่องทางจ่ายคืนจริงที่พนักงานระบุ ไม่จำเป็นต้องเป็นช่องทางรับเดิม
+- ธุรกรรมเงินใหม่ทุกตัวมี id, type, category (`base/extension/product/legacy`), amountSatang, method (`cash/qr`), session/bill/receipt/original transaction reference, command, เวลา/พนักงาน และ demo:true
+
+### สินค้าและสต๊อก
+
+SKU case-insensitive unique, barcode unique เมื่อมีค่า, category, active, cost/price snapshot; add/edit/toggle/adjust/return ต้อง manager; receiveStock ให้ staff ได้ ตะกร้าไม่จอง stock และเป็น shared cart เดียว ต้องตรวจ active/ราคา/stock อีกครั้งที่ checkout หากราคาเปลี่ยนต้องนำออกแล้วเพิ่มใหม่
+
+`checkout` product payment เก็บ product_id, quantity, unitPriceSatang, unitCostSatang; ตัด stock และสร้าง movement ที่ผูก transaction ใน commit เดียว `returnProduct` อ้าง original product payment จำกัดจำนวนขาย-คืนแล้ว คืนราคาต่อชิ้นเดิม เลือก restock ได้ และบันทึก refund/movement/audit พร้อมกัน กรณีของเสียเลือกไม่ restock ได้ ไม่มีการลบ sale เดิม
+
+### Reports และเวลา
+
+`GET /api/reports?mode=daily&day=YYYY-MM-DD`, `mode=monthly&month=YYYY-MM`, หรือ `mode=range&from=...&to=...` เรียก makeReport จาก snapshot ฝั่ง server โดยตรง `GET /api/state`/ผล command มี serverNow สำหรับ client clock offset
+
+ขอบเขตวันใช้ Asia/Bangkok (UTC+7) รวมวันสิ้นสุด จัดกลุ่มรายรับจาก payment ตามหมวด, refunds ตามวันที่คืน, cash/qr แยกรับ/คืน/สุทธิ ไม่ใช้การจบคิวสร้างรายได้ Refund ที่คืนข้ามวันทำให้สุทธิวันคืนติดลบได้ ไม่ควรย้อนแก้รายรับวันเดิม
+
+รายงาน Session ใช้ cohort ที่ startedAt อยู่ในช่วงวัน ให้จำนวนจบ/ยกเลิกภายใน cohort และ terminal events ในช่วงวันแยกกัน เส้นทาง Station รวม move/restore แต่จำนวน move นับเฉพาะคำสั่ง move ระยะใช้จริงรวม usageIntervals ไม่รวมช่วงปิดคิวผิด-รอกู้คืน ถ้าไม่ยืนยันหรือเป็นข้อมูลเก่ารายงานไม่ทราบ ไม่อนุมานว่าใช้ครบ 25 นาที
+
+### Upgrade และข้อจำกัดที่ยังเหลือ
+
+SQLite v2 → v3 อัปเกรดใน BEGIN IMMEDIATE เก็บ state เดิมครบใน schemaArchives ไม่แก้ transactions/receipts/audit เดิม ช่องทาง/หมวดของธุรกรรมเก่าที่ไม่บันทึกไว้ใช้ unknown/legacy ไม่สร้างเงินใหม่ ข้อมูลสินค้ายกมาเป็น opening movement และ active Sessions เดิมเป็น legacyPostpaid deadline ไม่เปลี่ยน รับยอดค้างเก่าแยกจาก prepaid ใหม่
+
+UI เก็บ command ค้างใน sessionStorage ก่อนส่ง หาก response หายให้ retry ID/payload/actor เดิม หลัง refresh ถ้าพบ ID ใน server state แล้วจะไม่ส่งเงินใหม่ ถ้ายังไม่พบจะแสดงให้ยืนยันส่งคำสั่งเดิม ถ้า revision เปลี่ยนต้องตรวจใหม่ ไม่ silently rebase คำสั่งรับเงินจริง การเขียนเงิน/stock ของ Server Demo อยู่ SQLite เสมอ ไม่ใช้ client state เป็นหลักฐาน
+
+ยังเป็น DEMO: manual confirmation ไม่ใช่ bank verification; บทบาทเลือกได้ไม่ใช่ authenticated identity; state JSON/WAL เป็นฐานทดลองไม่ใช่ normalized production schema; ต้องทำ HTTPS/auth/manager re-auth, provider reconciliation หากเชื่อม QR จริง, audit tamper protection, backup+restore test, rate limits/retention/pagination และแยก production environment ก่อนใช้เงินจริง Local HTML เป็น UI sandbox เท่านั้น ไม่ใช่แหล่งรายได้/stock ถาวรของร้าน
