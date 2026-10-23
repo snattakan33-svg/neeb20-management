@@ -4,19 +4,20 @@
 select{font:inherit;min-height:48px;max-width:100%;border:1px solid #adbfb3;border-radius:9px;background:#fff;padding:10px}dialog{width:min(620px,94vw);max-height:90vh;overflow:auto;border:1px solid #b2c3b5;border-radius:16px;padding:24px;color:#203c35}dialog::backdrop{background:#102d2466}dialog p{overflow-wrap:anywhere}#dialog-error{color:#a42d1c;font-weight:600}.operator{padding:16px;background:#e7eee5;border-radius:12px;margin-bottom:20px}.operator p{margin:8px 0}.records{margin-top:32px}.session-record{background:white;border:1px solid #d9e0d6;padding:16px;border-radius:12px;margin:12px 0;overflow-wrap:anywhere}pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px}.session-record .actions{justify-content:flex-start}.session-record .actions button{flex:0 1 auto}.station .actions button{min-width:100px}.station p{overflow-wrap:anywhere}
 .check{display:flex;align-items:center;gap:12px}.check input{width:24px;min-width:24px;height:24px;min-height:24px;margin:0}.report-controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}.report-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}.report-grid>div{padding:16px;background:white;border:1px solid #d9e0d6;border-radius:12px}.report-grid strong{display:block;font-size:24px;margin-top:8px}#report-error{color:#a42d1c}.product .actions{margin-top:12px}.product .actions button{flex:0 1 auto}
 </style></head>
-<body><header><div><strong>หนีบ<span>20</span></strong><p>NEEB20 MANAGEMENT · PREPAID DEMO</p></div><button id="export" class="secondary">สำรองข้อมูลทดสอบ</button></header>
+<body><header><div><strong>หนีบ<span>20</span></strong><p>NEEB20 MANAGEMENT · SESSION BILL DEMO</p></div><button id="export" class="secondary">สำรองข้อมูลทดสอบ</button></header>
 <aside class="notice">โหมดทดสอบเท่านั้น · ไม่รับเงินจริง · สต๊อกจำลอง · พนักงานเปิด–ปิดไฟด้วยมือ</aside>
 <main><div class="operator"><label>ผู้ดำเนินการทดสอบ<select id="actor"></select></label><p id="mode"></p><p>การเลือกชื่อ/บทบาทนี้เป็นการจำลองสิทธิ์ ไม่ใช่การเข้าสู่ระบบ ห้ามใช้รับเงินจริง</p></div><div id="message" role="status" aria-live="polite"></div><section><div class="section-head"><div><h1>พื้นที่บริการ</h1><p>20 บาท / 25 นาที · ต่อเวลา 5 บาท / 5 นาที</p></div><span id="summary"></span></div><p>สีเหลือง: เหลือไม่เกิน 5 นาที · สีแดง: หมดเวลา รอพนักงานยืนยันจบคิว</p><div id="stations" class="stations"></div></section>
-<section class="pos"><div><h2>POS · สินค้าทดสอบ</h2><p>ชำระค่าบริการก่อนเริ่ม/ต่อเวลา · POS ขายสินค้าแยกตามช่องทางรับเงิน</p><label>ค้นหาชื่อ / สแกนบาร์โค้ด (เครื่องที่ส่งค่าแบบแป้นพิมพ์)<input id="search" type="search" placeholder="ชื่อหรือบาร์โค้ด"></label><div id="products"></div><details><summary>เพิ่มสินค้าทดสอบ</summary><form id="product-form"><label>รหัสสินค้า<input name="sku" required maxlength="64"></label><label>หมวดหมู่<input name="category" required maxlength="80"></label><label>ชื่อสินค้า<input name="name" required maxlength="100"></label><label>บาร์โค้ด (ถ้ามี)<input name="barcode" maxlength="80"></label><div class="fields"><label>ทุน (บาท)<input name="cost" type="number" min="0" step="0.01" required></label><label>ขาย (บาท)<input name="price" type="number" min="0.01" step="0.01" required></label><label>สต๊อกทดสอบ<input name="stock" type="number" min="0" step="1" required></label></div><button>เพิ่มสินค้า</button></form></details></div>
+<section class="pos"><div><h2>POS · สินค้าทดสอบ</h2><p>เริ่มคิวเปิดบิลค้างชำระ · เพิ่มสินค้าในบิล Station ผ่านปุ่มเพิ่มสินค้า · POS ส่วนนี้สำหรับขายแยก</p><label>ค้นหาชื่อ / สแกนบาร์โค้ด (เครื่องที่ส่งค่าแบบแป้นพิมพ์)<input id="search" type="search" placeholder="ชื่อหรือบาร์โค้ด"></label><div id="products"></div><details><summary>เพิ่มสินค้าทดสอบ</summary><form id="product-form"><label>รหัสสินค้า<input name="sku" required maxlength="64"></label><label>หมวดหมู่<input name="category" required maxlength="80"></label><label>ชื่อสินค้า<input name="name" required maxlength="100"></label><label>บาร์โค้ด (ถ้ามี)<input name="barcode" maxlength="80"></label><div class="fields"><label>ทุน (บาท)<input name="cost" type="number" min="0" step="0.01" required></label><label>ขาย (บาท)<input name="price" type="number" min="0.01" step="0.01" required></label><label>สต๊อกทดสอบ<input name="stock" type="number" min="0" step="1" required></label></div><button>เพิ่มสินค้า</button></form></details></div>
 <div class="bill"><h2>บิลทดสอบ</h2><div id="cart"></div><div class="total">รวม <strong id="total"></strong></div><button id="checkout">ยืนยันบิลทดสอบ · ไม่รับเงินจริง</button><div id="receipt" aria-live="polite"></div></div></section><section><details><summary>ประวัติสต๊อกล่าสุด 50 รายการ</summary><div id="inventory-log"></div></details><details><summary>รายการขายสินค้า / คืนสินค้า (ล่าสุด 30 รายการ; ใช้รายงานและสำรองข้อมูลเพื่อดูทั้งหมด)</summary><div id="sales-history"></div></details></section>
-<section class="records"><h2>รายการคิวและคำขออนุมัติ</h2><p>ประวัติไม่ถูกลบ · ผู้จัดการทดสอบอนุมัติยกเลิก กู้คืน และคืนเงินได้</p><div id="sessions"></div><h2>ยอดธุรกรรมทดสอบสะสม</h2><p id="financial-summary"></p><p>ยอดนี้รวมเฉพาะธุรกรรมรับ/คืนเงินทดสอบ ไม่ได้นับจากจำนวนครั้งที่จบคิว</p><details><summary>Audit Log ล่าสุด 50 เหตุการณ์ (สำรองข้อมูลเพื่อดูทั้งหมด)</summary><div id="audit"></div></details><p id="legacy"></p></section><section class="records"><h2>รายงานรายได้และการใช้งาน · ข้อมูลทดสอบ</h2><div id="report-controls" class="report-controls"><label>รูปแบบ<select id="report-mode"><option value="daily">รายวัน</option><option value="monthly">รายเดือน</option><option value="range">ช่วงวันที่</option></select></label><label>วัน<input id="report-day" type="date"></label><label>เดือน<input id="report-month" type="month"></label><label>จาก<input id="report-from" type="date"></label><label>ถึง<input id="report-to" type="date"></label></div><p id="report-error" role="alert"></p><button id="export-csv" class="secondary">ดาวน์โหลดธุรกรรม CSV (ข้อมูลทดสอบ)</button><div id="report-summary"></div><p id="report-refunds"></p><details><summary>Session ที่เริ่มในช่วงวันที่ · เวลาและการย้ายจุด</summary><div id="report-sessions"></div></details><details><summary>ประวัติธุรกรรมในช่วงวันที่ · รวมรายการคืนเงิน</summary><div id="report-transactions"></div></details></section><footer>รุ่นต้นแบบ · ดูโหมดจัดเก็บที่ด้านบน · ทุกข้อมูลเป็นข้อมูลทดสอบ<br>สระ100 · พนักงานจริง · ค่าคอมมิชชัน · อุปกรณ์หน้าร้าน: อยู่ในแผนพัฒนาถัดไป</footer></main><dialog id="confirm-dialog"><form id="confirm-form"><h2 id="dialog-title"></h2><div id="dialog-body"></div><p id="dialog-error" role="alert"></p><div class="actions"><button type="button" id="cancel-dialog" class="secondary">ยกเลิก</button><button id="confirm-command" type="submit">ยืนยัน</button></div></form></dialog><script type="module">
+<section class="records"><h2>รายการคิวและคำขออนุมัติ</h2><p>ประวัติไม่ถูกลบ · ผู้จัดการทดสอบอนุมัติยกเลิก กู้คืน และคืนเงินได้</p><div id="sessions"></div><h2>ยอดธุรกรรมทดสอบสะสม</h2><p id="financial-summary"></p><p>ยอดนี้รวมเฉพาะธุรกรรมรับ/คืนเงินทดสอบ ไม่ได้นับจากจำนวนครั้งที่จบคิว</p><details><summary>Audit Log ล่าสุด 50 เหตุการณ์ (สำรองข้อมูลเพื่อดูทั้งหมด)</summary><div id="audit"></div></details><p id="legacy"></p></section><section class="records"><h2>รายงานรายได้และการใช้งาน · ข้อมูลทดสอบ</h2><div id="report-controls" class="report-controls"><label>รูปแบบ<select id="report-mode"><option value="daily">รายวัน</option><option value="monthly">รายเดือน</option><option value="range">ช่วงวันที่</option></select></label><label>วัน<input id="report-day" type="date"></label><label>เดือน<input id="report-month" type="month"></label><label>จาก<input id="report-from" type="date"></label><label>ถึง<input id="report-to" type="date"></label></div><p id="report-error" role="alert"></p><button id="export-csv" class="secondary">ดาวน์โหลดธุรกรรม CSV (ข้อมูลทดสอบ)</button><button id="export-bills-csv" class="secondary">ดาวน์โหลดรายงานบิล CSV</button><div id="report-summary"></div><details><summary>รายงานบิล PAID / UNPAID / CANCELLED / REFUNDED</summary><div id="report-bills"></div></details><p id="report-refunds"></p><details><summary>Session ที่เริ่มในช่วงวันที่ · เวลาและการย้ายจุด</summary><div id="report-sessions"></div></details><details><summary>ประวัติธุรกรรมในช่วงวันที่ · รวมรายการคืนเงิน</summary><div id="report-transactions"></div></details></section><footer>รุ่นต้นแบบ · ดูโหมดจัดเก็บที่ด้านบน · ทุกข้อมูลเป็นข้อมูลทดสอบ<br>สระ100 · พนักงานจริง · ค่าคอมมิชชัน · อุปกรณ์หน้าร้าน: อยู่ในแผนพัฒนาถัดไป</footer></main><dialog id="confirm-dialog"><form id="confirm-form"><h2 id="dialog-title"></h2><div id="dialog-body"></div><p id="dialog-error" role="alert"></p><div class="actions"><button type="button" id="cancel-dialog" class="secondary">ยกเลิก</button><button id="confirm-command" type="submit">ยืนยัน</button></div></form></dialog><script type="module">
 const NEEB20_STANDALONE = true;
-const STORAGE_KEY = 'neeb20:demo:v3';
-const PREVIOUS_KEY = 'neeb20:demo:v2';
+const STORAGE_KEY = 'neeb20:demo:v4';
+const PREVIOUS_KEY = 'neeb20:demo:v3';
+const OLDER_KEY = 'neeb20:demo:v2';
 const LEGACY_KEY = 'neeb20:demo:v1';
 const newId = () => Array.from(crypto.getRandomValues(new Uint8Array(16)), n=>n.toString(16).padStart(2,'0')).join('');
 function createDemo() {
-  const state={version:3,demo:true,revision:0,stations:Array.from({length:12},(_,i)=>({id:i+1,session_id:null})),sessions:[],bills:[],transactions:[],audit:[],commands:[],
+  const state={version:4,demo:true,revision:0,stations:Array.from({length:12},(_,i)=>({id:i+1,session_id:null})),sessions:[],bills:[],transactions:[],audit:[],commands:[],
     employees:[{id:'staff-01',name:'พนักงานทดสอบ 01',role:'staff'},{id:'manager-01',name:'ผู้จัดการทดสอบ 01',role:'manager'}],
     stockMovements:[],products:[{id:'p1',sku:'DEMO001',category:'อุปกรณ์',active:true,name:'หวีทดสอบ',barcode:'885000000001',cost:15,price:29,stock:20},{id:'p2',sku:'DEMO002',category:'ดูแลผม',active:true,name:'เซรั่มทดสอบ',barcode:'885000000002',cost:45,price:79,stock:10}],cart:[],receipts:[]};
   state.stockMovements=openingMovements(state.products,0,'ยอดตัวอย่างเริ่มต้น — ไม่ใช่สต๊อกจริง');return state;
@@ -34,12 +35,21 @@ function finance(state,billId) {
   const tx=state.transactions.filter(t=>t.bill_id===billId);
   const paid=tx.filter(t=>t.type==='payment').reduce((n,t)=>n+t.amountSatang,0);
   const refunded=tx.filter(t=>t.type==='refund').reduce((n,t)=>n+t.amountSatang,0);
-  const charged=b.charges.reduce((n,l)=>n+l.amountSatang,0);
+  const charged=b.charges.filter(l=>!l.voided).reduce((n,l)=>n+l.amountSatang,0);
   return {charged,paid,refunded,net:paid-refunded,due:b.cancelled?0:Math.max(0,charged-paid),
     status:paid===0?(b.cancelled?'cancelled-before-payment':'unpaid'):refunded===paid?'refund-full':refunded>0?'refund-partial':paid>=charged?'paid':'unpaid'};
 }
+function billLines(state,billId){
+  const bill=state.bills.find(b=>b.id===billId);if(!bill)fail('ไม่พบบิล');
+  return bill.charges.filter(c=>!c.voided).map(c=>({...c,name:c.name||(c.kind==='extension'?'ต่อเวลา 5 นาที':'ค่าบริการหนีบ20'),quantity:c.quantity||1,unitPriceSatang:c.unitPriceSatang??c.amountSatang}));
+}
+function billStatus(state,billId){const b=state.bills.find(b=>b.id===billId),f=finance(state,billId);return f.refunded>0?'REFUNDED':b.cancelled?'CANCELLED':f.paid>0&&f.due===0?'PAID':'UNPAID';}
+function refreshBills(state){for(const bill of state.bills)bill.status=billStatus(state,bill.id);}
+function recognizedTransactions(state){
+  return state.transactions.filter(t=>!t.bill_id||state.bills.some(b=>b.id===t.bill_id&&(b.everPaid||finance(state,b.id).paid>0)));
+}
 function salesSummary(state) {
-  return state.transactions.reduce((a,t)=>{a[t.type==='payment'?'received':'refunded']+=t.amountSatang;a.net=a.received-a.refunded;return a;},{received:0,refunded:0,net:0});
+  return recognizedTransactions(state).reduce((a,t)=>{a[t.type==='payment'?'received':'refunded']+=t.amountSatang;a.net=a.received-a.refunded;return a;},{received:0,refunded:0,net:0});
 }
 function cartLines(state) {
   return state.cart.map(l=>l.kind==='service'?{...l,name:`บริการ ${l.session_id.slice(0,8)}`,price:finance(state,l.bill_id).due/100,quantity:1}:l).filter(l=>l.price>0);
@@ -73,11 +83,24 @@ function execute(original,command,actorId,now=Date.now()) {
     const before=product.stock;if(!Number.isSafeInteger(delta)||product.stock+delta<0||product.stock+delta>1000000)fail('จำนวนสต๊อกไม่ถูกต้อง');product.stock+=delta;
     const movement={id:newId(),product_id:product.id,quantityDelta:delta,before,after:product.stock,kind,reason,at:now,employee_id:actor.id,command_id:command.id,transaction_id:transactionId};state.stockMovements.push(movement);log('stock:'+kind,null,{stock:before},{stock:product.stock},reason,{product_id:product.id,movement_id:movement.id});return movement;
   };
-  const recordPayment=(s,amount,category)=>{
-    const before=finance(state,s.bill_id),receiptId=newId();
-    const tx={id:newId(),type:'payment',category,method:paymentMethod(),amountSatang:amount,bill_id:s.bill_id,session_id:s.session_id,receipt_id:receiptId,command_id:command.id,at:now,employee_id:actor.id,demo:true};
-    state.transactions.push(tx);state.receipts.push({id:receiptId,createdAt:now,demo:true,total:amount/100,lines:[{kind:'service',category,session_id:s.session_id,name:category==='base'?'หนีบ20 · ชำระก่อนใช้':'ต่อเวลา 5 นาที',price:amount/100,quantity:1}],transaction_ids:[tx.id]});
-    log('payment',s,before,finance(state,s.bill_id),null,{transaction_id:tx.id,method:tx.method});return tx;
+  const mutableBill=s=>{
+    const bill=state.bills.find(b=>b.id===s.bill_id);if(bill.cancelled||finance(state,bill.id).paid>0)fail('บิลชำระแล้วหรือยกเลิกแล้ว ไม่สามารถเพิ่ม/แก้รายการได้');
+    if(s.cancelRequest)fail('คิวอยู่ระหว่างรออนุมัติยกเลิก');return bill;
+  };
+  const settleBill=(bill,s)=>{
+    received();const f=finance(state,bill.id);if(bill.cancelled||f.paid>0)fail('บิลชำระแล้วหรือมีประวัติรับเงินแล้ว ห้ามรับซ้ำ','CONFLICT');
+    const lines=billLines(state,bill.id);if(!lines.length)fail('บิลไม่มีรายการ');
+    const required=new Map();for(const line of lines.filter(l=>l.kind==='product'))required.set(line.product_id,(required.get(line.product_id)||0)+line.quantity);
+    for(const [id,quantity] of required){const p=state.products.find(p=>p.id===id);if(!p||!p.active||p.stock<quantity)fail('สินค้าไม่เปิดขายหรือสต๊อกไม่เพียงพอ กรุณาจัดการรายการในบิล');}
+    const receipt={id:newId(),payment_id:newId(),bill_id:bill.id,session_id:s?.session_id||null,createdAt:now,demo:true,total:f.charged/100,method:paymentMethod(),lines:lines.map(l=>({kind:l.kind==='product'?'product':'service',category:l.kind,name:l.name,quantity:l.quantity,price:l.unitPriceSatang/100,charge_id:l.id})),transaction_ids:[]};
+    for(const line of lines){
+      const before=finance(state,bill.id),tx={id:newId(),payment_id:receipt.payment_id,type:'payment',category:['base','extension','product'].includes(line.kind)?line.kind:'legacy',method:paymentMethod(),amountSatang:line.amountSatang,bill_id:bill.id,session_id:s?.session_id||null,station_id:s?.station_id||null,charge_id:line.id,receipt_id:receipt.id,command_id:command.id,at:now,employee_id:actor.id,demo:true,...(line.kind==='product'?{product_id:line.product_id,quantity:line.quantity,unitPriceSatang:line.unitPriceSatang,unitCostSatang:line.unitCostSatang}:{})};
+      state.transactions.push(tx);receipt.transaction_ids.push(tx.id);
+      if(line.kind==='product')moveStock(state.products.find(p=>p.id===line.product_id),-line.quantity,'sale','ชำระบิล '+bill.id,tx.id);
+      log('payment',s,before,finance(state,bill.id),null,{transaction_id:tx.id,payment_id:receipt.payment_id,bill_id:bill.id,method:tx.method});
+    }
+    bill.everPaid=true;bill.paidAt=now;bill.paidBy=actor.id;bill.paymentMethod=paymentMethod();bill.payment_id=receipt.payment_id;bill.transaction_ids=receipt.transaction_ids.slice();state.receipts.push(receipt);
+    return {bill_id:bill.id,session_id:s?.session_id||null,transaction_id:receipt.payment_id,transaction_ids:receipt.transaction_ids,receipt_id:receipt.id};
   };
   const refundSession=(s,amount,reason)=>{
     if(!Number.isSafeInteger(amount)||amount<=0||amount>finance(state,s.bill_id).net)fail('ยอดคืนต้องมากกว่า 0 และไม่เกินยอดที่รับสุทธิ');
@@ -87,7 +110,7 @@ function execute(original,command,actorId,now=Date.now()) {
       const returned=state.transactions.filter(t=>t.type==='refund'&&t.original_transaction_id===originalTx.id).reduce((n,t)=>n+t.amountSatang,0);
       // v2 refunds have no original reference: only allocate what the whole bill still permits.
       const part=Math.min(remaining,originalTx.amountSatang-returned);if(part<=0)continue;
-      const before=finance(state,s.bill_id),tx={id:newId(),type:'refund',category:originalTx.category||'legacy',method:paymentMethod(),amountSatang:part,bill_id:s.bill_id,session_id:s.session_id,original_transaction_id:originalTx.id,command_id:command.id,at:now,employee_id:actor.id,demo:true,reason};
+      const before=finance(state,s.bill_id),tx={id:newId(),type:'refund',category:originalTx.category||'legacy',method:paymentMethod(),amountSatang:part,bill_id:s.bill_id,session_id:s.session_id,original_transaction_id:originalTx.id,...(originalTx.category==='product'?{product_id:originalTx.product_id,quantity:part===originalTx.amountSatang-returned?Math.max(0,originalTx.quantity-state.transactions.filter(r=>r.original_transaction_id===originalTx.id).reduce((n,r)=>n+(r.quantity||0),0)):0,restock:false}:{}),command_id:command.id,at:now,employee_id:actor.id,demo:true,reason};
       state.transactions.push(tx);ids.push(tx.id);log('refund',s,before,finance(state,s.bill_id),reason,{transaction_id:tx.id,approvedBy:actor.id});remaining-=part;if(!remaining)break;
     }
     if(remaining)fail('ไม่สามารถอ้างอิงรายการรับเงินเดิมได้');return ids;
@@ -96,11 +119,11 @@ function execute(original,command,actorId,now=Date.now()) {
   let result={};
   switch(command.type){
     case 'start':{
-      received();const station=getStation(payload.station_id);if(station.session_id)fail('จุดนี้มีคิวอยู่แล้ว','CONFLICT');
+      const station=getStation(payload.station_id);if(station.session_id)fail('จุดนี้มีคิวอยู่แล้ว','CONFLICT');
       const id=newId(),billId=newId();
-      const s={session_id:id,station_id:station.id,startedAt:now,endsAt:now+1500000,serviceStatus:'active',feeSatang:2000,extensions:0,bill_id:billId,history:[],cancelRequest:null,usageIntervals:[],prepaid:true};
-      state.sessions.push(s);state.bills.push({id:billId,session_id:id,cancelled:false,charges:[{id:newId(),kind:'base',amountSatang:2000,at:now}]});station.session_id=id;
-      log('start',s,null,s);const tx=recordPayment(s,2000,'base');result={session_id:id,bill_id:billId,transaction_id:tx.id};break;
+      const s={session_id:id,station_id:station.id,startedAt:now,endsAt:now+1500000,serviceStatus:'active',feeSatang:2000,extensions:0,bill_id:billId,history:[],cancelRequest:null,usageIntervals:[{startedAt:now,endedAt:null}],billingFlow:'session-bill'};
+      state.sessions.push(s);state.bills.push({id:billId,session_id:id,status:'UNPAID',createdAt:now,cancelled:false,charges:[{id:newId(),kind:'base',name:'ค่าบริการหนีบ20',amountSatang:2000,at:now}]});station.session_id=id;
+      log('start',s,null,s);result={session_id:id,bill_id:billId};break;
     }
     case 'markUsed':{
       const s=getSession();active(s);if(s.cancelRequest)fail('คิวรออนุมัติยกเลิก');
@@ -114,17 +137,33 @@ function execute(original,command,actorId,now=Date.now()) {
       log('move',s,before,s,reason,{correction:payload.correction===true});break;
     }
     case 'extend':{
-      received();const s=getSession();active(s);if(s.cancelRequest)fail('คิวอยู่ระหว่างรออนุมัติยกเลิก');
+      const s=getSession();active(s);const bill=mutableBill(s);
       const before=structuredClone(s);s.endsAt+=300000;s.extensions++;s.feeSatang+=500;
-      state.bills.find(b=>b.id===s.bill_id).charges.push({id:newId(),kind:'extension',amountSatang:500,at:now,supplemental:true});
-      const tx=recordPayment(s,500,'extension');log('extend',s,before,s,null,{transaction_id:tx.id});result={transaction_id:tx.id};break;
+      bill.charges.push({id:newId(),kind:'extension',name:'ต่อเวลา 5 นาที',amountSatang:500,at:now});log('extend',s,before,s);result={bill_id:bill.id};break;
     }
     case 'finish':{
       const s=getSession();if(s.serviceStatus==='finished'){result={session_id:s.session_id,alreadyFinished:true};break;}
-      const station=active(s);const before=structuredClone(s);closeUsage(s);s.serviceStatus='finished';s.finishedAt=now;station.session_id=null;
-      addToCart(state,s);log('finish',s,before,s);break;
+      const station=active(s);if(finance(state,s.bill_id).due>0||finance(state,s.bill_id).paid===0)fail('บิลนี้ยังไม่ได้ชำระเงิน ต้องการไปหน้าคิดเงินหรือไม่?','PAYMENT_REQUIRED');const before=structuredClone(s);closeUsage(s);s.serviceStatus='finished';s.finishedAt=now;station.session_id=null;
+      log('finish',s,before,s);break;
     }
-    case 'selectBill':{const s=getSession();if(s.serviceStatus==='cancelled')fail('คิวถูกยกเลิก');addToCart(state,s);log('selectBill',s,null,{bill_id:s.bill_id});break;}
+    case 'addBillProduct':{
+      const s=getSession();active(s);const bill=mutableBill(s),product=state.products.find(p=>p.id===payload.product_id),quantity=payload.quantity;
+      if(!product||!product.active||!Number.isSafeInteger(quantity)||quantity<1)fail('สินค้า/จำนวนไม่ถูกต้อง');
+      const current=billLines(state,bill.id).filter(l=>l.product_id===product.id).reduce((n,l)=>n+l.quantity,0);if(current+quantity>product.stock)fail('จำนวนเกินสต๊อกปัจจุบัน');
+      const before=structuredClone(bill);bill.charges.push({id:newId(),kind:'product',product_id:product.id,sku:product.sku,name:product.name,quantity,unitPriceSatang:Math.round(product.price*100),unitCostSatang:Math.round(product.cost*100),amountSatang:Math.round(product.price*100)*quantity,at:now});
+      log('addBillProduct',s,before,bill);break;
+    }
+    case 'removeBillProduct':{
+      const s=getSession();active(s);const bill=mutableBill(s),line=bill.charges.find(c=>c.id===payload.charge_id&&c.kind==='product'&&!c.voided);if(!line)fail('ไม่พบรายการสินค้า');const before=structuredClone(line);line.voided=true;line.voidReason=needReason(payload.reason);log('removeBillProduct',s,before,line,line.voidReason);break;
+    }
+    case 'payBill':{
+      const s=getSession();if(s.serviceStatus==='active')active(s);if(s.serviceStatus==='cancelled'||s.cancelRequest)fail('คิวถูกยกเลิกหรือรออนุมัติยกเลิก');result=settleBill(state.bills.find(b=>b.id===s.bill_id),s);break;
+    }
+    case 'cancelUnpaid':{
+      const s=getSession(),reason=needReason(payload.reason),bill=state.bills.find(b=>b.id===s.bill_id);if(s.serviceStatus==='cancelled'){result={alreadyCancelled:true};break;}
+      if(finance(state,bill.id).paid>0)fail('รับเงินแล้ว ต้องให้ผู้จัดการดำเนินการคืนเงิน/VOID','FORBIDDEN');
+      const station=s.serviceStatus==='active'?active(s):getStation(s.station_id);if(!['active','finished'].includes(s.serviceStatus))fail('สถานะคิวไม่ถูกต้อง');const before=structuredClone(s);closeUsage(s);if(station.session_id===s.session_id)station.session_id=null;s.serviceStatus='cancelled';s.cancelledAt=now;bill.cancelled=true;s.cancelRequest=null;log('cancel',s,before,s,reason,{bill_id:bill.id});break;
+    }
     case 'requestCancel':{
       const s=getSession(),reason=needReason(payload.reason);if(s.serviceStatus==='cancelled'||s.cancelRequest)fail('ยกเลิกแล้วหรือมีคำขออยู่แล้ว');
       if(s.serviceStatus==='active')active(s);
@@ -146,9 +185,9 @@ function execute(original,command,actorId,now=Date.now()) {
       log('cancel',s,before,s,reason,{request,refund_transaction_ids:refunds});result={refund_transaction_ids:refunds};break;
     }
     case 'restore':{
-      manager();const s=getSession(),reason=needReason(payload.reason);if(s.serviceStatus!=='finished')fail('กู้คืนได้เฉพาะคิวที่จบแล้ว');
+      manager();const s=getSession(),reason=needReason(payload.reason);if(s.serviceStatus!=='finished')fail('กู้คืนได้เฉพาะคิวที่จบแล้ว');if(finance(state,s.bill_id).due>0)fail('บิลเดิมยังไม่ชำระ');
       const station=getStation(payload.targetStationId);if(station.session_id)fail('จุดที่จะกู้คืนไม่ว่าง','CONFLICT');
-      const before=structuredClone(s);s.station_id=station.id;s.serviceStatus='active';s.finishedAt=null;station.session_id=s.session_id;
+      const before=structuredClone(s);s.station_id=station.id;s.serviceStatus='active';s.finishedAt=null;station.session_id=s.session_id;if(s.billingFlow==='session-bill')s.usageIntervals.push({startedAt:now,endedAt:null});
       log('restore',s,before,s,reason,{approvedBy:actor.id});break;
     }
     case 'addProduct':
@@ -174,9 +213,10 @@ function execute(original,command,actorId,now=Date.now()) {
       const tx=state.transactions.find(t=>t.id===payload.transaction_id&&t.type==='payment'&&t.category==='product'),quantity=payload.quantity,reason=needReason(payload.reason);
       if(!tx||!Number.isSafeInteger(quantity)||quantity<=0||typeof payload.restock!=='boolean')fail('รายการคืนสินค้าไม่ถูกต้อง');
       const already=state.transactions.filter(t=>t.type==='refund'&&t.original_transaction_id===tx.id).reduce((n,t)=>n+(t.quantity||0),0);
-      if(already+quantity>tx.quantity)fail('จำนวนคืนเกินจำนวนที่ขายหรือคืนไปแล้ว');
+      const refundedMoney=state.transactions.filter(t=>t.type==='refund'&&t.original_transaction_id===tx.id).reduce((n,t)=>n+t.amountSatang,0);
+      if(already+quantity>tx.quantity||quantity*tx.unitPriceSatang>tx.amountSatang-refundedMoney)fail('จำนวนคืนเกินจำนวนที่ขายหรือคืนไปแล้ว');
       const product=state.products.find(p=>p.id===tx.product_id);if(!product)fail('ไม่พบสินค้า');
-      const refund={id:newId(),type:'refund',category:'product',method:paymentMethod(),amountSatang:quantity*tx.unitPriceSatang,product_id:product.id,quantity,original_transaction_id:tx.id,receipt_id:tx.receipt_id,bill_id:null,session_id:null,at:now,employee_id:actor.id,command_id:command.id,demo:true,reason,restock:payload.restock};
+      const refund={id:newId(),type:'refund',category:'product',method:paymentMethod(),amountSatang:quantity*tx.unitPriceSatang,product_id:product.id,quantity,original_transaction_id:tx.id,receipt_id:tx.receipt_id,bill_id:tx.bill_id||null,session_id:tx.session_id||null,at:now,employee_id:actor.id,command_id:command.id,demo:true,reason,restock:payload.restock};
       state.transactions.push(refund);if(payload.restock)moveStock(product,quantity,'return',reason,refund.id);
       log('refundProduct',null,{sold:tx.quantity,returned:already},{returned:already+quantity,amountSatang:refund.amountSatang},reason,{transaction_id:refund.id,approvedBy:actor.id});result={transaction_id:refund.id};break;
     }
@@ -187,31 +227,25 @@ function execute(original,command,actorId,now=Date.now()) {
     }
     case 'removeCart':{const before=structuredClone(state.cart);state.cart=state.cart.filter(l=>l.kind==='service'?l.bill_id!==payload.line_id:l.id!==payload.line_id);log('removeCart',null,before,state.cart);break;}
     case 'checkout':{
-      received();const lines=cartLines(state);if(!lines.length)fail('ตะกร้ายังว่างหรือชำระแล้ว');
-      for(const line of lines.filter(l=>l.kind==='product')){const p=state.products.find(p=>p.id===line.id);if(!p||!p.active||p.stock<line.quantity||!Number.isInteger(line.quantity)||line.quantity<1)fail('สต๊อกทดสอบไม่เพียงพอหรือสินค้าปิดขาย');if(p.price!==line.price)fail('ราคาสินค้าเปลี่ยน กรุณานำออกแล้วเพิ่มใหม่');}
-      const receipt={id:newId(),createdAt:now,demo:true,total:total(lines),lines:structuredClone(lines),transaction_ids:[]};
-      for(const line of lines){
-        const s=line.kind==='service'?state.sessions.find(s=>s.session_id===line.session_id):null;
-        const before=s?finance(state,s.bill_id):null;
-        const tx={id:newId(),type:'payment',category:s?'legacy':'product',method:paymentMethod(),...(s?{}:{product_id:line.id,quantity:line.quantity,unitPriceSatang:Math.round(line.price*100),unitCostSatang:Math.round(line.cost*100)}),amountSatang:Math.round(line.price*line.quantity*100),bill_id:s?.bill_id||null,session_id:s?.session_id||null,receipt_id:receipt.id,command_id:command.id,at:now,employee_id:actor.id,demo:true};
-        state.transactions.push(tx);if(line.kind==='product')moveStock(state.products.find(p=>p.id===line.id),-line.quantity,'sale','ขายสินค้าทดสอบ',tx.id);receipt.transaction_ids.push(tx.id);log('payment',s,before,s?finance(state,s.bill_id):{amountSatang:tx.amountSatang},null,{transaction_id:tx.id});
-      }
-      state.receipts.push(receipt);state.cart=[];result={receipt_id:receipt.id};break;
+      const lines=cartLines(state);if(!lines.length)fail('ตะกร้ายังว่างหรือชำระแล้ว');if(lines.some(l=>l.kind!=='product'))fail('ชำระบิล Station ผ่านปุ่มคิดเงินของ Session');
+      for(const line of lines){const p=state.products.find(p=>p.id===line.id);if(!p||p.price!==line.price)fail('ราคาสินค้าเปลี่ยน กรุณานำออกแล้วเพิ่มใหม่');}
+      const bill={id:newId(),session_id:null,type:'pos',status:'UNPAID',createdAt:now,cancelled:false,charges:lines.map(l=>({id:newId(),kind:'product',product_id:l.id,name:l.name,quantity:l.quantity,unitPriceSatang:Math.round(l.price*100),unitCostSatang:Math.round(l.cost*100),amountSatang:Math.round(l.price*100)*l.quantity,at:now}))};
+      state.bills.push(bill);result=settleBill(bill,null);state.cart=[];break;
     }
     case 'refund':{
       manager();const s=getSession(),reason=needReason(payload.reason);const ids=refundSession(s,payload.amountSatang,reason);result={transaction_ids:ids};break;
     }
     default:fail('ไม่รองรับคำสั่ง');
   }
-  state.revision++;state.commands.push({id:command.id,fingerprint,result});validateState(state);
+  refreshBills(state);state.revision++;state.commands.push({id:command.id,fingerprint,result});validateState(state);
   return {state,result,replayed:false};
 }
 function validateState(state){
-  if(state.version!==3||state.stations.length!==12)fail('รูปแบบข้อมูลไม่ถูกต้อง');
+  if(state.version!==4||state.stations.length!==12)fail('รูปแบบข้อมูลไม่ถูกต้อง');
   for(const key of ['sessions','bills','transactions','audit','commands','employees','products','cart','receipts','stockMovements'])if(!Array.isArray(state[key]))fail('ข้อมูลไม่ครบ');
   for(const [items,key] of [[state.stations,'id'],[state.sessions,'session_id'],[state.bills,'id'],[state.transactions,'id'],[state.commands,'id']])if(new Set(items.map(i=>i[key])).size!==items.length)fail('พบรหัสซ้ำ');
   for(const t of state.stations){const s=state.sessions.find(s=>s.session_id===t.session_id);if(t.session_id&&(!s||s.station_id!==t.id||s.serviceStatus!=='active'))fail('Station กับ Session ไม่ตรงกัน');}
-  for(const s of state.sessions){if(!state.bills.some(b=>b.id===s.bill_id&&b.session_id===s.session_id))fail('Session ไม่มีบิล');if(s.serviceStatus==='active'&&state.stations.find(t=>t.id===s.station_id)?.session_id!==s.session_id)fail('Session ไม่มี Station');}
+  for(const s of state.sessions){if(state.bills.filter(b=>b.session_id===s.session_id).length!==1||!state.bills.some(b=>b.id===s.bill_id&&b.session_id===s.session_id))fail('Session ไม่มีบิล');if(s.serviceStatus==='active'&&state.stations.find(t=>t.id===s.station_id)?.session_id!==s.session_id)fail('Session ไม่มี Station');}
   return state;
 }
 // Keep the full original archive; old receipts are not invented as new payments.
@@ -228,20 +262,22 @@ function migrateLegacy(old){
   if(old.version!==1||!Array.isArray(old.stations)||old.stations.length!==12)fail('ไม่สามารถนำเข้าข้อมูลเก่าได้');
   old.stations.forEach(t=>{if(t.session)importSession(t.session,t.id);});
   for(const l of old.cart||[]){if(l.kind==='service')importSession(l,Number(l.name.match(/\d+/)?.[0])||1,true);else state.cart.push(structuredClone(l));}
-  state.products=old.products.map((p,i)=>({...structuredClone(p),sku:p.sku||`LEGACY${i+1}`,category:p.category||'ข้อมูลเก่า',active:p.active!==false}));state.stockMovements=openingMovements(state.products,Date.now(),'นำเข้าสินค้าทดสอบ v1');validateState(state);return state;
+  state.products=old.products.map((p,i)=>({...structuredClone(p),sku:p.sku||`LEGACY${i+1}`,category:p.category||'ข้อมูลเก่า',active:p.active!==false}));state.stockMovements=openingMovements(state.products,Date.now(),'นำเข้าสินค้าทดสอบ v1');refreshBills(state);validateState(state);return state;
 }
 
 // Upgrade without rewriting old transaction/audit records or inventing payment methods.
 function upgradeState(old){
-  if(old.version===3)return validateState(old);
+  if(old.version===4)return validateState(old);
   if(old.version===1)return migrateLegacy(old);
-  if(old.version!==2)fail('ไม่รองรับรุ่นฐานข้อมูล');
-  const state=structuredClone(old);state.schemaArchives=[...(state.schemaArchives||[]),{version:2,savedAt:Date.now(),state:structuredClone(old)}];state.version=3;state.revision++;
-  state.stockMovements=[];state.products=state.products.map((p,i)=>({...p,sku:p.sku||`LEGACY${i+1}`,category:p.category||'ข้อมูลเก่า',active:p.active!==false}));
-  state.stockMovements=openingMovements(state.products,Date.now(),'ยอดยกมาจากข้อมูลทดสอบ v2');
-  state.sessions=state.sessions.map(s=>({...s,usageIntervals:[],legacyPostpaid:true}));
-  state.audit.push({id:newId(),command_id:'schema-v3',type:'schemaUpgrade',at:Date.now(),employee_id:'system-migration',session_id:null,before:{version:2},after:{version:3},reason:'เปลี่ยนเป็น prepaid โดยไม่สร้างยอดรับเงินย้อนหลัง'});
-  return validateState(state);
+  if(![2,3].includes(old.version))fail('ไม่รองรับรุ่นฐานข้อมูล');
+  const state=structuredClone(old);state.schemaArchives=[...(state.schemaArchives||[]),{version:old.version,savedAt:Date.now(),state:structuredClone(old)}];state.version=4;state.revision++;
+  state.products=state.products.map((p,i)=>({...p,sku:p.sku||`LEGACY${i+1}`,category:p.category||'ข้อมูลเก่า',active:p.active!==false}));
+  state.stockMovements ||= openingMovements(state.products,Date.now(),'ยอดยกมาจากข้อมูลทดสอบเก่า');
+  state.sessions=state.sessions.map(s=>({...s,usageIntervals:s.usageIntervals||[],legacyPostpaid:s.legacyPostpaid??old.version===2}));
+  for(const b of state.bills){const payments=state.transactions.filter(t=>t.bill_id===b.id&&t.type==='payment');b.everPaid=payments.length>0;b.createdAt=state.sessions.find(s=>s.session_id===b.session_id)?.startedAt||0;if(payments.length){b.paidAt=payments.at(-1).at;b.paidBy=payments.at(-1).employee_id;b.paymentMethod=new Set(payments.map(t=>t.method||'unknown')).size===1?(payments[0].method||'unknown'):'mixed';b.transaction_ids=payments.map(t=>t.id);}}
+  state.cart=state.cart.filter(l=>l.kind==='product');
+  state.audit.push({id:newId(),command_id:'schema-v4',type:'schemaUpgrade',at:Date.now(),employee_id:'system-migration',session_id:null,before:{version:old.version},after:{version:4},reason:'บิลหลักต่อ Session; เก็บรายรับเก่าโดยไม่สร้างเงินย้อนหลัง'});
+  refreshBills(state);return validateState(state);
 }
 
 const bangkokDay=ms=>new Date(ms+7*3600000).toISOString().slice(0,10);
@@ -265,7 +301,7 @@ function usageMilliseconds(session,now=Date.now()){
 function stationHistory(state,s){const path=state.audit.filter(a=>a.session_id===s.session_id&&['start','importLegacy','move','restore'].includes(a.type)).map(a=>a.after.station_id);if(!path.length)path.push(s.station_id);return path.filter((id,i)=>i===0||id!==path[i-1]);}
 function makeReport(state,input={},now=Date.now()){
   const range=reportRange(input,now),inside=ms=>Number.isFinite(ms)&&ms>=range.start&&ms<range.end;
-  const transactions=state.transactions.filter(t=>inside(t.at));
+  const transactions=recognizedTransactions(state).filter(t=>inside(t.at));
   const summary={base:0,extension:0,product:0,legacy:0,received:0,refunded:0,net:0,cash:{received:0,refunded:0,net:0},qr:{received:0,refunded:0,net:0},unknown:{received:0,refunded:0,net:0}};
   for(const t of transactions){
     const refund=t.type==='refund',method=['cash','qr'].includes(t.method)?t.method:'unknown',category=['base','extension','product'].includes(t.category)?t.category:'legacy';
@@ -277,12 +313,23 @@ function makeReport(state,input={},now=Date.now()){
     const moves=state.audit.filter(a=>a.type==='move'&&a.session_id===s.session_id);
     return {session_id:s.session_id,bill_id:s.bill_id,station_id:s.station_id,startedAt:s.startedAt,endsAt:s.endsAt,finishedAt:s.finishedAt??null,cancelledAt:s.cancelledAt??null,status:status(s,now),serviceStatus:s.serviceStatus,moves:moves.length,stationHistory:stationHistory(state,s),usageMilliseconds:usageMilliseconds(s,now),usageIntervals:s.usageIntervals||[],legacy:!!s.legacyPostpaid};
   });
-  return {demo:true,generatedAt:now,range,summary,sessionCount:sessions.length,finishedCount:sessions.filter(s=>s.status==='finished').length,cancelledCount:sessions.filter(s=>s.status==='cancelled').length,finishedInRange:state.sessions.filter(s=>inside(s.finishedAt)).length,cancelledInRange:state.sessions.filter(s=>inside(s.cancelledAt)).length,sessions,transactions,refunds:transactions.filter(t=>t.type==='refund')};
+  const bills=state.bills.filter(b=>inside(b.createdAt)||inside(b.paidAt)||transactions.some(t=>t.bill_id===b.id)).map(b=>{
+    const session=state.sessions.find(s=>s.session_id===b.session_id),lines=billLines(state,b.id),financial=finance(state,b.id),payments=state.transactions.filter(t=>t.bill_id===b.id&&t.type==='payment');
+    return {bill_id:b.id,session_id:b.session_id,station_id:session?.station_id??null,startedAt:session?.startedAt??null,finishedAt:session?.finishedAt??null,cancelledAt:session?.cancelledAt??null,usageMilliseconds:session?usageMilliseconds(session,now):null,status:billStatus(state,b.id),lines,serviceSatang:lines.filter(l=>l.kind!=='product').reduce((n,l)=>n+l.amountSatang,0),productSatang:lines.filter(l=>l.kind==='product').reduce((n,l)=>n+l.amountSatang,0),totalSatang:financial.charged,receivedSatang:financial.paid,refundedSatang:financial.refunded,netSatang:financial.net,cashSatang:payments.filter(t=>t.method==='cash').reduce((n,t)=>n+t.amountSatang,0),qrSatang:payments.filter(t=>t.method==='qr').reduce((n,t)=>n+t.amountSatang,0),paidAt:b.paidAt??null,paidBy:b.paidBy??null,paymentMethod:b.paymentMethod??null,payment_id:b.payment_id??null,transaction_ids:payments.map(t=>t.id)};
+  });
+  return {bills,demo:true,generatedAt:now,range,summary,sessionCount:sessions.length,finishedCount:sessions.filter(s=>s.status==='finished').length,cancelledCount:sessions.filter(s=>s.status==='cancelled').length,finishedInRange:state.sessions.filter(s=>inside(s.finishedAt)).length,cancelledInRange:state.sessions.filter(s=>inside(s.cancelledAt)).length,sessions,transactions,refunds:transactions.filter(t=>t.type==='refund')};
 }
 function reportCSV(report){
   const cell=value=>{if(typeof value==='number')return String(value);let s=String(value??'');if(/^[=+@\-\t\r]/.test(s))s="'"+s;return '"'+s.replaceAll('"','""')+'"';};
   const rows=[['DEMO ONLY','เวลา UTC','ประเภท','หมวด','ช่องทาง','จำนวนบาท','Transaction ID','Session ID','บิล','อ้างอิงรายการเดิม','พนักงาน','เหตุผล'],...report.transactions.map(t=>['ข้อมูลทดสอบ',new Date(t.at).toISOString(),t.type,t.category||'legacy',t.method||'unknown',(t.type==='refund'?-1:1)*t.amountSatang/100,t.id,t.session_id,t.bill_id,t.original_transaction_id,t.employee_id,t.reason])];
   return '\uFEFF'+rows.map(row=>row.map(cell).join(',')).join('\r\n');
+}
+
+function billsCSV(report){
+ const cell=value=>{if(typeof value==='number')return String(value);let s=String(value??'');if(/^[=+@\-\t\r]/.test(s))s="'"+s;return '"'+s.replaceAll('"','""')+'"';};
+ const time=ms=>ms===null?'':new Date(ms).toISOString();
+ const rows=[['DEMO ONLY','Bill ID','Session ID','Station','เริ่ม UTC','จบ UTC','ใช้งานวินาที','รายการบริการ','รายการสินค้า','ยอดบริการบาท','ยอดสินค้าบาท','ยอดรวมบาท','รับเงินสดบาท','รับ QR บาท','ชำระ UTC','พนักงาน','สถานะ','Payment ID','Transaction IDs','คืนเงินบาท','สุทธิบาท'],...report.bills.map(b=>['ข้อมูลทดสอบ',b.bill_id,b.session_id,b.station_id,time(b.startedAt),time(b.finishedAt),b.usageMilliseconds===null?'ไม่ทราบ':b.usageMilliseconds/1000,JSON.stringify(b.lines.filter(l=>l.kind!=='product')),JSON.stringify(b.lines.filter(l=>l.kind==='product')),b.serviceSatang/100,b.productSatang/100,b.totalSatang/100,b.cashSatang/100,b.qrSatang/100,time(b.paidAt),b.paidBy,b.status,b.payment_id,b.transaction_ids.join(' / '),b.refundedSatang/100,b.netSatang/100])];
+ return '\uFEFF'+rows.map(row=>row.map(cell).join(',')).join('\r\n');
 }
 
 const $=s=>document.querySelector(s);
@@ -294,13 +341,13 @@ const labels={idle:'ว่าง พร้อมให้บริการ',act
 const financialLabels={unpaid:'ยังไม่ชำระ',paid:'ชำระแล้ว','refund-partial':'คืนเงินบางส่วน','refund-full':'คืนเงินเต็มจำนวน','cancelled-before-payment':'ยกเลิกก่อนรับเงิน'};
 let serverOffset=0;
 const appNow=()=>Date.now()+serverOffset;
-const PENDING_KEY='neeb20:pending:v3';
+const PENDING_KEY='neeb20:pending:v4';
 let state,mode=(location.protocol==='file:'||typeof NEEB20_STANDALONE!=='undefined')?'local-demo':'server-demo',busy=false,modal=null,activeActor='staff-01';
 const notified=new Map();
 function localRead(){
   const saved=localStorage.getItem(STORAGE_KEY);
   if(saved)return validateState(JSON.parse(saved));
-  const previous=localStorage.getItem(PREVIOUS_KEY),legacy=localStorage.getItem(LEGACY_KEY),initial=previous?upgradeState(JSON.parse(previous)):legacy?migrateLegacy(JSON.parse(legacy)):createDemo();
+  const previous=localStorage.getItem(PREVIOUS_KEY)||localStorage.getItem(OLDER_KEY),legacy=localStorage.getItem(LEGACY_KEY),initial=previous?upgradeState(JSON.parse(previous)):legacy?migrateLegacy(JSON.parse(legacy)):createDemo();
   localStorage.setItem(STORAGE_KEY,JSON.stringify(initial));return initial;
 }
 async function readState(){
@@ -323,7 +370,7 @@ async function commit(cmd,actorId=activeActor){const result=await dispatch(cmd,a
 function showDialog(title,body,type,getPayload){
   if(busy||modal)return;
   modal={type,getPayload,revision:state.revision,id:newId(),actorId:activeActor,pending:null};
-  $('#dialog-title').textContent=title;$('#dialog-body').innerHTML=body;$('#dialog-error').textContent='';$('#confirm-command').disabled=false;$('#confirm-command').textContent='ยืนยัน';$('#cancel-dialog').disabled=false;$('#confirm-dialog').showModal();
+  $('#dialog-title').textContent=title;$('#dialog-body').innerHTML=body;$('#dialog-error').textContent='';$('#confirm-command').hidden=false;$('#confirm-command').disabled=false;$('#confirm-command').textContent='ยืนยัน';$('#cancel-dialog').disabled=false;$('#confirm-dialog').showModal();
 }
 function closeDialog(){if(busy)return;$('#confirm-dialog').close();modal=null;}
 $('#cancel-dialog').onclick=closeDialog;
@@ -340,8 +387,16 @@ $('#confirm-form').addEventListener('submit',async e=>{
     else {$('#confirm-command').textContent='ลองคำสั่งเดิมอีกครั้ง';$('#dialog-body').querySelectorAll('input,select').forEach(el=>el.disabled=true);}
   }finally{busy=false;$('#confirm-command').disabled=false;$('#cancel-dialog').disabled=!!modal?.pending;}
 });
-$('#confirm-dialog').addEventListener('close',()=>{$('#confirm-command').hidden=false;});
-function sessionInfo(s){const f=finance(state,s.bill_id);return `<p><b>จุด ${s.station_id} · Session ${escape(s.session_id)}</b></p><p>เริ่ม ${date(s.startedAt)}<br>สิ้นสุด ${date(s.endsAt)}<br>เหลือ ${Math.max(0,Math.ceil((s.endsAt-appNow())/60000))} นาที (คำนวณจากเวลาสิ้นสุดเดิม)</p><p>ค่าบริการ ${cash(s.feeSatang)}<br>${financialLabels[f.status]} · รับแล้ว ${cash(f.paid)} · คืนแล้ว ${cash(f.refunded)} · ต้องชำระ ${cash(f.due)}</p>`;}
+$('#confirm-dialog').addEventListener('close',()=>{$('#confirm-command').type='submit';$('#confirm-command').onclick=null;});
+function sessionInfo(s){const f=finance(state,s.bill_id);return `<p><b>จุด ${s.station_id} · Session ${escape(s.session_id)}</b></p><p>เริ่ม ${date(s.startedAt)}<br>สิ้นสุด ${date(s.endsAt)}<br>เหลือ ${Math.max(0,Math.ceil((s.endsAt-appNow())/60000))} นาที (คำนวณจากเวลาสิ้นสุดเดิม)</p><p>Bill ${escape(s.bill_id)}<br>ค่าบริการ ${cash(s.feeSatang)} · ยอดบิลรวม ${cash(f.charged)}<br>${financialLabels[f.status]} · รับแล้ว ${cash(f.paid)} · คืนแล้ว ${cash(f.refunded)} · ต้องชำระ ${cash(f.due)}</p>`;}
+function billMarkup(s){
+ const f=finance(state,s.bill_id),bill=state.bills.find(b=>b.id===s.bill_id),mutable=f.paid===0&&!bill.cancelled;
+ return `<p>Bill ID: <b>${escape(s.bill_id)}</b> · ${billStatus(state,s.bill_id)}</p><div class="bill-items">${billLines(state,s.bill_id).map(l=>`<div class="cart-line"><div>${escape(l.name)} × ${l.quantity}<small>${cash(l.unitPriceSatang)} / ชิ้น</small></div><strong>${cash(l.amountSatang)}</strong>${mutable&&l.kind==='product'?`<button type="button" class="secondary" data-remove-charge="${escape(l.id)}" data-session="${escape(s.session_id)}">นำออก</button>`:''}</div>`).join('')}</div><p class="total">รวมทั้งสิ้น <b>${cash(f.charged)}</b></p><p>ชำระแล้ว ${cash(f.paid)} · ค้าง ${cash(f.due)} · คืนแล้ว ${cash(f.refunded)}</p>`;
+}
+const quickActions=new Map();
+function quickCommand(key,title,body,type,payload){
+ if(busy||modal)return;if(Date.now()-(quickActions.get(key)||0)<1500){setMessage('เพิ่งส่งคำสั่งนี้ กรุณารอสักครู่ก่อนกดอีกครั้ง');return;}quickActions.set(key,Date.now());showDialog(title,body,type,()=>payload);$('#confirm-form').requestSubmit();
+}
 function targetOptions(s){return state.stations.filter(t=>!t.session_id&&t.id!==s?.station_id).map(t=>`<option value="${t.id}">จุด ${t.id}</option>`).join('');}
 const reasonField='<label>เหตุผล (จำเป็น)<input id="reason" required maxlength="500"></label>';
 const reason=()=>$('#reason').value.trim();
@@ -352,10 +407,20 @@ function openSessionAction(type,s){
   if(type==='move'||type==='correct'){
     const options=targetOptions(s);if(!options){setMessage('ไม่มีจุดว่างสำหรับย้าย');return;}
     showDialog(type==='correct'?'แก้ไขจุดที่เริ่มผิด':'ย้ายจุด',sessionInfo(s)+`<label>จุดปลายทางที่ว่าง<select id="target">${options}</select></label>`+reasonField,'move',()=>({...base,targetStationId:Number($('#target').value),reason:reason(),correction:type==='correct'}));
-  }else if(type==='finish')showDialog('ยืนยันจบคิว · ตรวจจุดและ Session',sessionInfo(s)+'<p>กรุณาปิดไฟด้วยมือ การจบคิวไม่ใช่การรับเงิน และไม่สร้างบิลใหม่</p>','finish',()=>base);
-  else if(type==='extend')showDialog('รับชำระก่อนต่อเวลา 5 นาที / 5 บาท',sessionInfo(s)+'<p>รับชำระ 5 บาทก่อนเพิ่มเวลา ใช้ Session และบิลเดิม</p>'+paymentFields(),'extend',()=>({...base,...paymentPayload()}));
-  else if(type==='markUsed')showDialog('ยืนยันลูกค้าเริ่มใช้บริการจริง',sessionInfo(s)+'<p>บันทึกเวลาใช้จริงแยกจากเวลาเริ่มจับเวลา หากกดแล้วจะไม่สามารถอ้างว่ายังไม่ใช้บริการเพื่อคืนเต็มอัตโนมัติได้</p>','markUsed',()=>base);
-  else if(type==='requestCancel')showDialog('ส่งคำขอยกเลิก · รอผู้จัดการอนุมัติ',sessionInfo(s)+reasonField,'requestCancel',()=>({...base,reason:reason()}));
+  }else if(type==='finish'){
+    const f=finance(state,s.bill_id);if(f.due>0||f.paid===0){showDialog('บิลนี้ยังไม่ได้ชำระเงิน ต้องการไปหน้าคิดเงินหรือไม่?',sessionInfo(s)+billMarkup(s),'payBill',()=>({...base,...paymentPayload()}));$('#confirm-command').type='button';$('#confirm-command').textContent='ไปหน้าคิดเงิน';$('#confirm-command').onclick=event=>{event.preventDefault();closeDialog();$('#confirm-command').onclick=null;$('#confirm-command').type='submit';openSessionAction('payBill',s);};return;}
+    showDialog('ยืนยันจบคิว · ตรวจจุดและ Session',sessionInfo(s)+'<p>ปิดจุดเท่านั้น ไม่รับเงินหรือสร้างรายการขายใหม่</p>','finish',()=>base);
+  }
+  else if(type==='extend')quickCommand('extend:'+s.session_id,'กำลังต่อเวลา',sessionInfo(s),'extend',base);
+  else if(type==='addBillProduct'){
+    const products=state.products.filter(p=>p.active&&p.stock>0);if(!products.length){setMessage('ไม่มีสินค้าที่เปิดขายและมีสต๊อก');return;}
+    showDialog('เพิ่มสินค้าในบิล Station '+s.station_id,billMarkup(s)+`<label>เลือกสินค้าจาก POS<select id="bill-product">${products.map(p=>`<option value="${escape(p.id)}">${escape(p.sku)} · ${escape(p.name)} · ${money(p.price)} · เหลือ ${p.stock}</option>`).join('')}</select></label><label>จำนวน<input id="bill-quantity" type="number" min="1" step="1" value="1" required></label><p id="bill-preview"></p><p>ยังไม่ตัดสต๊อก/บันทึกรายรับ ตรวจสต๊อกซ้ำเมื่อชำระเงิน</p>`,'addBillProduct',()=>({...base,product_id:$('#bill-product').value,quantity:Number($('#bill-quantity').value)}));
+    const update=()=>{const p=products.find(p=>p.id===$('#bill-product').value),quantity=Number($('#bill-quantity').value);$('#bill-preview').textContent=`เพิ่ม ${money(p.price*quantity)} · รวมหลังเพิ่ม ${cash(finance(state,s.bill_id).charged+Math.round(p.price*100)*quantity)}`;};$('#bill-product').onchange=update;$('#bill-quantity').oninput=update;update();
+  }else if(type==='payBill'||type==='selectBill'){
+    const f=finance(state,s.bill_id),canPay=f.paid===0&&!state.bills.find(b=>b.id===s.bill_id).cancelled;
+    showDialog(canPay?'คิดเงิน / ชำระเงิน':'รายละเอียดบิล',sessionInfo(s)+billMarkup(s)+(canPay?paymentFields():''),'payBill',()=>({...base,...paymentPayload()}));if(!canPay)$('#confirm-command').hidden=true;
+  }
+  else if(type==='requestCancel'){const unpaid=finance(state,s.bill_id).paid===0;showDialog(unpaid?'ยกเลิกบริการและบิลที่ยังไม่ชำระ':'ส่งคำขอยกเลิก · รอผู้จัดการอนุมัติ',sessionInfo(s)+reasonField,unpaid?'cancelUnpaid':'requestCancel',()=>({...base,reason:reason()}));}
   else if(type==='approveCancel'){
     const f=finance(state,s.bill_id),used=s.usageIntervals?.length>0;
     showDialog('ผู้จัดการอนุมัติยกเลิกและพิจารณาคืนเงิน',sessionInfo(s)+`<p>คำขอจาก ${escape(s.cancelRequest.requestedBy)}: ${escape(s.cancelRequest.reason)}</p><label>การใช้บริการ<select id="unused">${used?'':'<option value="true">ยังไม่ได้ใช้จริง — ต้องคืนเต็มจำนวน</option>'}<option value="false">ใช้แล้ว — พิจารณาตามนโยบาย</option></select></label><label>ยอดคืน (บาท)<input id="refund-amount" type="number" min="0" max="${f.net/100}" step="0.01" value="${f.net/100}" required></label><p>ถ้าไม่คืนเงิน (0 บาท) ไม่ต้องเลือกช่องยืนยันคืนเงิน</p>`+reasonField+paymentFields(true),'approveCancel',()=>({...base,reason:reason(),unused:$('#unused').value==='true',refundAmountSatang:Math.round(Number($('#refund-amount').value)*100),...paymentPayload(true)}));
@@ -377,11 +442,11 @@ function tick(){
   }
 }
 function stations(){
-  $('#summary').textContent=`ว่าง ${state.stations.filter(s=>!s.session_id).length} / 12 จุด`;
-  $('#stations').innerHTML=state.stations.map(t=>{const s=sessionAt(state,t.id),f=s?finance(state,s.bill_id):null;
-    const btn=(action,label)=>`<button data-action="${action}" data-session="${escape(s.session_id)}" class="${action==='finish'?'':'secondary'}">${label}</button>`;
-    return `<article id="station-${t.id}" class="station"><h2>จุด ${String(t.id).padStart(2,'0')}</h2><span class="badge"></span><div class="timer" aria-label="เวลาคงเหลือ"></div><p>${s?`Session ${escape(s.session_id.slice(0,8))}<br>บริการ ${cash(s.feeSatang)} · สิ้นสุด ${date(s.endsAt)}<br>${financialLabels[f.status]}<br>รับแล้ว ${cash(f.paid)} · ค้าง ${cash(f.due)}`:'25 นาที · 20 บาท'}</p><div class="actions">${s?btn('extend','+5 นาที / 5฿')+(!s.usageIntervals?.some(i=>i.endedAt===null)?btn('markUsed','ยืนยันเริ่มใช้จริง'):'')+btn('move','ย้ายจุด')+btn('correct','แก้ไขจุดที่เริ่มผิด')+btn('finish','จบคิว')+(f.due?btn('selectBill','รับยอดค้างรุ่นเก่า'):'')+(s.cancelRequest?'<p>รออนุมัติยกเลิก</p>':btn('requestCancel','ขอยกเลิก')):`<button data-start="${t.id}">เริ่มคิว 20฿</button>`}</div></article>`;
-  }).join('');tick();
+ $('#summary').textContent=`ว่าง ${state.stations.filter(s=>!s.session_id).length} / 12 จุด`;
+ $('#stations').innerHTML=state.stations.map(t=>{const s=sessionAt(state,t.id),f=s?finance(state,s.bill_id):null;
+  const btn=(action,label)=>`<button data-action="${action}" data-session="${escape(s.session_id)}" ${f.paid>0&&['extend','addBillProduct'].includes(action)?'disabled title="บิลชำระแล้ว ล็อกรายการเพื่อไม่เปลี่ยนยอดรับ"':''} class="${action==='payBill'?'':'secondary'}">${label}</button>`;
+  return `<article id="station-${t.id}" class="station"><h2>จุด ${String(t.id).padStart(2,'0')}</h2><span class="badge"></span><div class="timer" aria-label="เวลาคงเหลือ"></div><p>${s?`ยอดปัจจุบัน <b>${cash(f.charged)}</b><br>${billStatus(state,s.bill_id)} · Session ${escape(s.session_id.slice(0,8))}`:'25 นาที · 20 บาท'}</p><div class="actions">${s?btn('extend','+5 นาที / 5฿')+btn('addBillProduct','เพิ่มสินค้า')+btn('move','ย้ายจุด')+btn('payBill',f.paid>0?'ดูบิล · ชำระแล้ว':'คิดเงิน / ชำระเงิน')+btn('finish','จบคิว')+btn('requestCancel','ยกเลิก'):`<button data-start="${t.id}">เริ่มคิว 20฿</button>`}</div></article>`;
+ }).join('');tick();
 }
 function products(){
  const query=$('#search').value.trim().toLowerCase(),manager=state.employees.find(e=>e.id===activeActor)?.role==='manager';
@@ -391,7 +456,7 @@ function products(){
  $('#sales-history').innerHTML=state.transactions.filter(t=>t.type==='payment'&&t.category==='product').slice(-30).reverse().map(t=>{
    const returned=state.transactions.filter(r=>r.type==='refund'&&r.original_transaction_id===t.id).reduce((n,r)=>n+(r.quantity||0),0);
    return `<div class="session-record">${escape(state.products.find(p=>p.id===t.product_id)?.name||t.product_id)} · ขาย ${t.quantity} · คืนแล้ว ${returned}<p>${date(t.at)} · ${escape(t.id)} · ${cash(t.amountSatang)} · ${escape(t.method)}</p>${manager&&returned<t.quantity?`<button data-return="${escape(t.id)}">คืนสินค้าทดสอบ</button>`:''}</div>`;
- }).join('')||'<p>ยังไม่มีรายการขายสินค้ารุ่น Prepaid</p>';
+ }).join('')||'<p>ยังไม่มีรายการขายสินค้าทดสอบ</p>';
 }
 function productAction(type,p){
  if(type==='editProduct'){
@@ -404,14 +469,15 @@ function reports(){
   const report=makeReport(state,{mode:$('#report-mode').value,day:$('#report-day').value,month:$('#report-month').value,from:$('#report-from').value,to:$('#report-to').value},appNow()),s=report.summary;
   $('#report-error').textContent='';$('#report-summary').innerHTML=`<p>ข้อมูลทดสอบ · ${report.range.from} ถึง ${report.range.to} (Asia/Bangkok)</p><div class="report-grid">${[['บริการหนีบ20',s.base],['ต่อเวลา',s.extension],['สินค้า',s.product],['ข้อมูลเก่าไม่ระบุหมวด',s.legacy],['รับเงินรวม',s.received],['คืนเงินรวม',s.refunded],['รายได้สุทธิ',s.net],['เงินสดสุทธิ',s.cash.net],['QR สุทธิ',s.qr.net],['ช่องทางเก่าไม่ระบุสุทธิ',s.unknown.net]].map(([label,n])=>`<div><small>${label}</small><strong>${cash(n)}</strong></div>`).join('')}</div><p>เงินสด: รับ ${cash(s.cash.received)} / คืน ${cash(s.cash.refunded)} · QR: รับ ${cash(s.qr.received)} / คืน ${cash(s.qr.refunded)}</p><p>คิวเริ่มในช่วงนี้ ${report.sessionCount} · ในกลุ่มนี้จบ ${report.finishedCount} / ยกเลิก ${report.cancelledCount}<br>เหตุการณ์จบในช่วงวันที่ ${report.finishedInRange} / ยกเลิก ${report.cancelledInRange} (อาจเป็นคิวเริ่มก่อนช่วงวันที่)</p>`;
   $('#report-sessions').innerHTML=report.sessions.map(s=>`<div class="session-record"><b>${escape(s.session_id)}</b><p>จุด ${s.stationHistory.join(' → ')} · ย้าย ${s.moves} ครั้ง · ${labels[s.status]}<br>เริ่มจับเวลา ${date(s.startedAt)} · กำหนดสิ้นสุด ${date(s.endsAt)}<br>จบจริง ${date(s.finishedAt)} · ยกเลิก ${date(s.cancelledAt)}<br>ใช้งานจริงตามการยืนยัน ${s.usageMilliseconds===null?'ยังไม่ยืนยัน / ข้อมูลเก่าไม่ทราบ':Math.floor(s.usageMilliseconds/60000)+' นาที '+Math.floor(s.usageMilliseconds/1000)%60+' วินาที'}</p></div>`).join('')||'<p>ไม่มี Session ที่เริ่มในช่วงนี้</p>';
+  $('#report-bills').innerHTML=report.bills.map(b=>`<div class="session-record"><b>Bill ${escape(b.bill_id)} · ${b.status}</b><p>Session ${escape(b.session_id||'ขายสินค้า POS')} · Station ${b.station_id??'—'}<br>เริ่ม ${date(b.startedAt)} · จบ ${date(b.finishedAt)} · ใช้งาน ${b.usageMilliseconds===null?'ไม่ทราบ':Math.floor(b.usageMilliseconds/1000)+' วินาที'}<br>${b.lines.map(l=>`${escape(l.name)} × ${l.quantity} = ${cash(l.amountSatang)}`).join('<br>')}<br>บริการ ${cash(b.serviceSatang)} · สินค้า ${cash(b.productSatang)} · รวม ${cash(b.totalSatang)}<br>รับสด ${cash(b.cashSatang)} · รับ QR ${cash(b.qrSatang)} · คืน ${cash(b.refundedSatang)}<br>ชำระ ${date(b.paidAt)} · ${escape(b.paidBy||'—')} · ${escape(b.paymentMethod||'—')}<br>Payment ${escape(b.payment_id||'—')}<br>Transaction ${b.transaction_ids.map(escape).join(', ')}</p></div>`).join('')||'<p>ไม่มีบิลในช่วงนี้</p>';
   $('#report-transactions').innerHTML=report.transactions.slice().reverse().map(t=>`<div class="session-record"><b>${t.type==='refund'?'คืนเงิน':'รับเงิน'} ${cash(t.amountSatang)} · ${escape(t.category||'legacy')} · ${escape(t.method||'unknown')}</b><p>${date(t.at)} · ${escape(t.employee_id)}<br>Transaction ${escape(t.id)}<br>Session ${escape(t.session_id||'—')} · บิล ${escape(t.bill_id||'—')}<br>อ้างอิงเดิม ${escape(t.original_transaction_id||'—')}<br>${escape(t.reason||'')}</p></div>`).join('')||'<p>ไม่มีธุรกรรมในช่วงนี้</p>';
   $('#report-refunds').textContent=`รายการคืนเงิน ${report.refunds.length} รายการ · ${cash(s.refunded)} (ดูรหัสอ้างอิงในประวัติธุรกรรมด้านล่าง)`;return report;
- }catch(e){$('#report-error').textContent=e.message;$('#report-summary').textContent='';$('#report-sessions').textContent='';$('#report-transactions').textContent='';$('#report-refunds').textContent='';return null;}
+ }catch(e){$('#report-error').textContent=e.message;$('#report-summary').textContent='';$('#report-sessions').textContent='';$('#report-transactions').textContent='';$('#report-refunds').textContent='';$('#report-bills').textContent='';return null;}
 }
 function records(){
   const manager=state.employees.find(e=>e.id===activeActor)?.role==='manager';
   $('#sessions').innerHTML=state.sessions.slice().reverse().map(s=>{const f=finance(state,s.bill_id);const btn=(action,label)=>`<button class="secondary" data-record="${action}" data-session="${escape(s.session_id)}">${label}</button>`;
-    return `<article class="session-record"><b>จุด ${s.station_id} · ${escape(s.session_id)}</b><p>${labels[status(s,appNow())]} · ${financialLabels[f.status]}<br>บิล ${escape(s.bill_id)} · บริการ ${cash(f.charged)} · รับแล้ว ${cash(f.paid)} · คืนแล้ว ${cash(f.refunded)} · ค้าง ${cash(f.due)}</p><div class="actions">${f.due?btn('selectBill','เรียกเก็บเงิน'):''}${s.serviceStatus!=='cancelled'&&!s.cancelRequest?btn('requestCancel','ขอยกเลิก'):''}${s.cancelRequest?(manager?btn('approveCancel','อนุมัติยกเลิก'):'<span>รอผู้จัดการอนุมัติยกเลิก</span>'):''}${manager&&s.serviceStatus==='finished'?btn('restore','กู้คืนคิว'):''}${manager&&f.net>0?btn('refund','คืนเงินทดสอบ'):''}</div><details><summary>ประวัติคิว ${s.history.length} เหตุการณ์</summary><pre>${escape(JSON.stringify(state.audit.filter(a=>a.session_id===s.session_id),null,2))}</pre></details></article>`;
+    return `<article class="session-record"><b>จุด ${s.station_id} · ${escape(s.session_id)}</b><p>${labels[status(s,appNow())]} · ${financialLabels[f.status]}<br>บิล ${escape(s.bill_id)} · ${billStatus(state,s.bill_id)} · รวม ${cash(f.charged)} · รับแล้ว ${cash(f.paid)} · คืนแล้ว ${cash(f.refunded)} · ค้าง ${cash(f.due)}</p><div class="actions">${f.due?btn('payBill','คิดเงิน / ชำระเงิน'):''}${s.serviceStatus!=='cancelled'&&!s.cancelRequest?btn('requestCancel','ขอยกเลิก'):''}${s.cancelRequest?(manager?btn('approveCancel','อนุมัติยกเลิก'):'<span>รอผู้จัดการอนุมัติยกเลิก</span>'):''}${manager&&s.serviceStatus==='finished'?btn('restore','กู้คืนคิว'):''}${manager&&f.net>0?btn('refund','คืนเงินทดสอบ'):''}</div><details><summary>ประวัติคิว ${s.history.length} เหตุการณ์</summary><pre>${escape(JSON.stringify(state.audit.filter(a=>a.session_id===s.session_id),null,2))}</pre></details></article>`;
   }).join('')||'<p>ยังไม่มีคิวทดสอบ</p>';
   const summary=salesSummary(state);$('#financial-summary').textContent=`รับเงินทดสอบ ${cash(summary.received)} · คืนเงินทดสอบ ${cash(summary.refunded)} · สุทธิ ${cash(summary.net)}`;
   $('#audit').innerHTML=state.audit.slice(-50).reverse().map(a=>`<details><summary>${escape(a.type)} · ${escape(a.employee_id)} · ${date(a.at)}</summary><pre>${escape(JSON.stringify(a,null,2))}</pre></details>`).join('')||'<p>ยังไม่มีเหตุการณ์</p>';
@@ -424,7 +490,8 @@ function render(){
   const last=state.receipts.at(-1);$('#receipt').innerHTML=last?`<b>บิลทดสอบล่าสุด · ไม่ใช่หลักฐานรับเงินจริง</b><br>${escape(last.id)}<br>${date(last.createdAt)}<br>${last.lines.map(l=>`${escape(l.name)} × ${l.quantity} — ${money(l.price*l.quantity)}`).join('<br>')}<br><b>รวม ${money(last.total)}</b>`:'';
 }
 // Small cart mutations are also confirmed, revision-checked commands.
-$('#stations').onclick=e=>{const start=e.target.closest('[data-start]'),b=e.target.closest('[data-action]');if(start)showDialog('รับชำระก่อนเริ่มบริการ',`<p>จุด ${Number(start.dataset.start)} · 25 นาที / 20 บาท</p><p>เริ่มเวลาเมื่อยืนยันรับชำระสำเร็จเท่านั้น ตรวจสอบจุดและเปิดไฟด้วยมือ</p>`+paymentFields(),'start',()=>({station_id:Number(start.dataset.start),...paymentPayload()}));else if(b){const s=state.sessions.find(s=>s.session_id===b.dataset.session);if(s)openSessionAction(b.dataset.action,s);}};
+$('#stations').onclick=e=>{const start=e.target.closest('[data-start]'),b=e.target.closest('[data-action]');if(start)quickCommand('start:'+start.dataset.start,'กำลังเริ่มคิว',`<p>จุด ${Number(start.dataset.start)} · 25 นาที / 20 บาท · บิลยังไม่ชำระ</p>`,'start',{station_id:Number(start.dataset.start)});else if(b){const s=state.sessions.find(s=>s.session_id===b.dataset.session);if(s)openSessionAction(b.dataset.action,s);}};
+$('#dialog-body').addEventListener('click',e=>{const b=e.target.closest('[data-remove-charge]');if(!b||busy||modal?.pending)return;const s=state.sessions.find(s=>s.session_id===b.dataset.session);closeDialog();showDialog('นำสินค้าออกจากบิลที่ยังไม่ชำระ',reasonField,'removeBillProduct',()=>({session_id:s.session_id,expectedStationId:s.station_id,charge_id:b.dataset.removeCharge,reason:reason()}));});
 $('#sessions').onclick=e=>{const b=e.target.closest('[data-record]');if(b){const s=state.sessions.find(s=>s.session_id===b.dataset.session);if(s)openSessionAction(b.dataset.record,s);}};
 $('#products').onclick=e=>{const action=e.target.closest('[data-product-action]'),b=e.target.closest('[data-product]');if(action){productAction(action.dataset.productAction,state.products.find(p=>p.id===action.dataset.productId));return;}if(b)showDialog('เพิ่มสินค้าทดสอบในตะกร้า',`<p>${escape(state.products.find(p=>p.id===b.dataset.product).name)} × 1</p>`,'addCart',()=>({product_id:b.dataset.product}));};
 $('#sales-history').onclick=e=>{const b=e.target.closest('[data-return]');if(!b)return;const tx=state.transactions.find(t=>t.id===b.dataset.return),returned=state.transactions.filter(t=>t.type==='refund'&&t.original_transaction_id===tx.id).reduce((n,t)=>n+(t.quantity||0),0);showDialog('ผู้จัดการคืนสินค้าและคืนเงิน',`<p>อ้างอิง ${escape(tx.id)} · คืนได้ ${tx.quantity-returned} ชิ้น · ราคาต่อชิ้น ${cash(tx.unitPriceSatang)}</p><label>จำนวนคืน<input id="return-quantity" type="number" min="1" max="${tx.quantity-returned}" step="1" value="1" required></label><label class="check"><input id="restock" type="checkbox" checked>รับสินค้าคืนเข้าสต๊อก</label>`+reasonField+paymentFields(true),'returnProduct',()=>({transaction_id:tx.id,quantity:Number($('#return-quantity').value),restock:$('#restock').checked,reason:reason(),...paymentPayload(true)}));};
@@ -436,9 +503,10 @@ $('#actor').onchange=()=>{activeActor=$('#actor').value;if(state){records();prod
 $('#export').onclick=async()=>{try{const latest=await readState(),blob=new Blob([JSON.stringify(latest,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`neeb20-demo-backup-${Date.now()}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}catch(e){setMessage(e.message);}};
 $('#report-controls').onchange=()=>{if(state)reports();};
 $('#export-csv').onclick=()=>{const report=reports();if(!report)return;const url=URL.createObjectURL(new Blob([reportCSV(report)],{type:'text/csv;charset=utf-8'})),a=document.createElement('a');a.href=url;a.download=`neeb20-demo-report-${report.range.from}-${report.range.to}.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
+$('#export-bills-csv').onclick=()=>{const report=reports();if(!report)return;const url=URL.createObjectURL(new Blob([billsCSV(report)],{type:'text/csv;charset=utf-8'})),a=document.createElement('a');a.href=url;a.download=`neeb20-demo-bills-${report.range.from}-${report.range.to}.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
 async function init(){try{
   state=await readState();const today=bangkokDay(appNow());$('#report-day').value=today;$('#report-month').value=today.slice(0,7);$('#report-from').value=today;$('#report-to').value=today;$('#actor').innerHTML=state.employees.map(e=>`<option value="${escape(e.id)}">${escape(e.name)} (${e.role})</option>`).join('');
-  $('#mode').textContent=mode==='server-demo'?'SERVER DEMO · SQLite กลางบนเครื่องเซิร์ฟเวอร์ · หลายเครื่องต้องเปิดเซิร์ฟเวอร์เดียวกัน · Prepaid':'LOCAL DEMO · ทดลองหน้าจอเท่านั้น ยอดนี้ไม่ใช่ฐานรายได้ร้าน ใช้ Server Demo เพื่อเก็บข้อมูลถาวร ห้ามใช้รับเงินจริง';render();
+  $('#mode').textContent=mode==='server-demo'?'SERVER DEMO · SQLite กลางบนเครื่องเซิร์ฟเวอร์ · หลายเครื่องต้องเปิดเซิร์ฟเวอร์เดียวกัน · บิลประจำ Session':'LOCAL DEMO · ทดลองหน้าจอเท่านั้น ยอดนี้ไม่ใช่ฐานรายได้ร้าน ใช้ Server Demo เพื่อเก็บข้อมูลถาวร ห้ามใช้รับเงินจริง';render();
   const pending=JSON.parse(sessionStorage.getItem(PENDING_KEY)||'null');if(pending){if(state.commands.some(c=>c.id===pending.command.id)){sessionStorage.removeItem(PENDING_KEY);setMessage('คำสั่งก่อนรีเฟรชบันทึกสำเร็จแล้ว ไม่บันทึกซ้ำ');}else{showDialog('ตรวจสอบคำสั่งค้างจากก่อนรีเฟรช',`<p>ส่งคำสั่งเดิมเท่านั้น เพื่อป้องกันรับเงินซ้ำ</p><pre>${escape(JSON.stringify(pending.command,null,2))}</pre>`,pending.command.type,()=>pending.command.payload);Object.assign(modal,{id:pending.command.id,revision:pending.command.expectedRevision,actorId:pending.actorId,pending:pending.command});$('#cancel-dialog').disabled=true;}}
   setInterval(tick,1000);setInterval(async()=>{if(busy||modal)return;try{const latest=await readState();if(latest.revision!==state.revision){state=latest;render();}}catch{setMessage('ติดต่อแหล่งข้อมูลไม่ได้ อย่ารับเงินจริง ตรวจการเชื่อมต่อก่อนทำรายการ');}},2000);
 }catch(e){setMessage(`เปิดข้อมูลไม่ได้: ${e.message} · ข้อมูลเดิมไม่ได้ถูกล้าง กรุณาสำรองข้อมูลและตรวจสอบก่อน`);document.querySelectorAll('button').forEach(b=>b.disabled=true);}}

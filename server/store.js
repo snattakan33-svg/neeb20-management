@@ -7,7 +7,7 @@ export class DemoStore {
     try{
       this.db.prepare('INSERT OR IGNORE INTO demo_state(id,body) VALUES(1,?)').run(JSON.stringify(createDemo()));
       const raw=JSON.parse(this.db.prepare('SELECT body FROM demo_state WHERE id=1').get().body);
-      if(raw.version!==3)this.db.prepare('UPDATE demo_state SET body=? WHERE id=1').run(JSON.stringify(upgradeState(raw)));
+      if(raw.version!==4)this.db.prepare('UPDATE demo_state SET body=? WHERE id=1').run(JSON.stringify(upgradeState(raw)));
       this.db.exec('COMMIT');
     }catch(e){this.db.exec('ROLLBACK');this.db.close();throw e;}
   }

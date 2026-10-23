@@ -20,7 +20,10 @@ test('HTTP two devices, idempotent retry, stale move, persisted restart and API 
   const move={id:'move',type:'move',payload:{session_id:s.session_id,expectedStationId:1,targetStationId:3,reason:'ทดสอบย้าย'},expectedRevision:state.revision};
   assert.equal((await post(move)).status,200);
   assert.equal((await post({id:'stale-finish',type:'finish',payload:{session_id:s.session_id,expectedStationId:1},expectedRevision:state.revision})).status,409);
-  state=await read();assert.equal(state.transactions.length,1);assert.equal(state.sessions[0].endsAt,deadline);assert.equal(state.stations[2].session_id,s.session_id);
+  state=await read();assert.equal(state.transactions.length,0);assert.equal(state.sessions[0].endsAt,deadline);assert.equal(state.stations[2].session_id,s.session_id);
+  assert.equal(state.transactions.length,0);
+  const payment={id:'pay-bill-a',type:'payBill',payload:{session_id:s.session_id,expectedStationId:3,method:'cash',paymentConfirmed:true},expectedRevision:state.revision};
+  const [paidA,paidB]=await Promise.all([post(payment),post({...payment,id:'pay-bill-b'})]);assert.deepEqual([paidA.status,paidB.status].sort(),[200,409]);state=await read();assert.equal(state.receipts.length,1);assert.equal(state.transactions.length,1);
   const report=await (await fetch(base+'/api/reports')).json();assert.equal(report.summary.base,2000);assert.equal(report.summary.cash.received,2000);assert.equal(report.transactions.length,1);
   assert.equal((await fetch(base+'/api/reports?mode=daily&day=2026-02-30')).status,400);
   assert.equal((await fetch(base+'/.data/demo.sqlite')).status,404);
@@ -40,12 +43,12 @@ test('independent SQLite connections enforce fresh revision within transaction',
   assert.equal(second.read().sessions.length,1);assert.equal(second.read().stations[0].session_id,first.read().sessions[0].session_id);
  }finally{first.close();second.close();await rm(directory,{recursive:true,force:true});}
 });
-test('prepaid money, inventory, refund and command IDs survive database reopen',async()=>{
+test('session bill payment, inventory, refund and command IDs survive database reopen',async()=>{
  const directory=await mkdtemp(join(tmpdir(),'neeb20-prepaid-persist-')),path=join(directory,'demo.sqlite');let store=new DemoStore(path);
  try{
   let seq=0;const run=(type,payload,actor='staff-01')=>store.dispatch({id:`persist-${++seq}`,type,payload,expectedRevision:store.read().revision},actor);
   const start={id:'persistent-start',type:'start',payload:{station_id:1,method:'qr',paymentConfirmed:true},expectedRevision:0};const outcome=store.dispatch(start,'staff-01');
-  const id=outcome.result.session_id;run('extend',{session_id:id,expectedStationId:1,method:'cash',paymentConfirmed:true});run('addCart',{product_id:'p1'});run('checkout',{method:'qr',paymentConfirmed:true});
+  const id=outcome.result.session_id;run('extend',{session_id:id,expectedStationId:1});run('payBill',{session_id:id,expectedStationId:1,method:'cash',paymentConfirmed:true});run('addCart',{product_id:'p1'});run('checkout',{method:'qr',paymentConfirmed:true});
   const productTx=store.read().transactions.find(t=>t.category==='product');run('returnProduct',{transaction_id:productTx.id,quantity:1,restock:true,reason:'คืนทดสอบ',method:'qr',refundConfirmed:true},'manager-01');
   const before=store.read();store.close();store=new DemoStore(path);assert.deepEqual(store.read(),before);assert.equal(store.dispatch(start,'staff-01').replayed,true);assert.equal(store.read().sessions[0].endsAt,before.sessions[0].endsAt);assert.equal(store.read().transactions.length,4);assert.equal(store.read().products[0].stock,20);
  }finally{store.close();await rm(directory,{recursive:true,force:true});}
@@ -54,7 +57,7 @@ test('server upgrades v2 SQLite once without erasing old records or inventing mo
  const directory=await mkdtemp(join(tmpdir(),'neeb20-upgrade-')),path=join(directory,'demo.sqlite');let store=new DemoStore(path);
  try{
   const legacy=store.read();legacy.version=2;legacy.transactions=[{id:'legacy-receipt-payment',type:'payment',amountSatang:2000,at:1000,bill_id:null,session_id:null}];delete legacy.stockMovements;
-  store.db.prepare('UPDATE demo_state SET body=? WHERE id=1').run(JSON.stringify(legacy));store.close();store=new DemoStore(path);const migrated=store.read();assert.equal(migrated.version,3);assert.deepEqual(migrated.transactions,legacy.transactions);assert.deepEqual(migrated.schemaArchives.at(-1).state,legacy);
+  store.db.prepare('UPDATE demo_state SET body=? WHERE id=1').run(JSON.stringify(legacy));store.close();store=new DemoStore(path);const migrated=store.read();assert.equal(migrated.version,4);assert.deepEqual(migrated.transactions,legacy.transactions);assert.deepEqual(migrated.schemaArchives.at(-1).state,legacy);
   store.close();store=new DemoStore(path);assert.deepEqual(store.read(),migrated);
  }finally{store.close();await rm(directory,{recursive:true,force:true});}
 });

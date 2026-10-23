@@ -1,6 +1,6 @@
 # แนวทางระบบจริงและฐานข้อมูล
 
-สถานะปัจจุบันเป็น **Prepaid v3** ให้ใช้หัวข้อ Prepaid v3 ท้ายเอกสารสำหรับขั้นตอนรับเงินปัจจุบัน หัวข้อก่อนหน้านั้นเก็บแนวทางฐานข้อมูลและประวัติการออกแบบก่อนปรับ Prepaid เพื่ออ้างอิง ไม่ใช่คำสั่งให้กลับไปใช้ postpaid
+สถานะปัจจุบันเป็น **Session Bill v4** ให้ใช้หัวข้อ Session Bill v4 ท้ายเอกสารสำหรับ Flow ปัจจุบัน ส่วน Prepaid v3 และหัวข้อเก่าคงไว้เป็นประวัติการออกแบบเพื่ออ้างอิง ไม่ใช่ขั้นตอนปัจจุบัน
 
 ## เทคโนโลยีที่เสนอ
 
@@ -103,3 +103,29 @@ SQLite v2 → v3 อัปเกรดใน BEGIN IMMEDIATE เก็บ state 
 UI เก็บ command ค้างใน sessionStorage ก่อนส่ง หาก response หายให้ retry ID/payload/actor เดิม หลัง refresh ถ้าพบ ID ใน server state แล้วจะไม่ส่งเงินใหม่ ถ้ายังไม่พบจะแสดงให้ยืนยันส่งคำสั่งเดิม ถ้า revision เปลี่ยนต้องตรวจใหม่ ไม่ silently rebase คำสั่งรับเงินจริง การเขียนเงิน/stock ของ Server Demo อยู่ SQLite เสมอ ไม่ใช้ client state เป็นหลักฐาน
 
 ยังเป็น DEMO: manual confirmation ไม่ใช่ bank verification; บทบาทเลือกได้ไม่ใช่ authenticated identity; state JSON/WAL เป็นฐานทดลองไม่ใช่ normalized production schema; ต้องทำ HTTPS/auth/manager re-auth, provider reconciliation หากเชื่อม QR จริง, audit tamper protection, backup+restore test, rate limits/retention/pagination และแยก production environment ก่อนใช้เงินจริง Local HTML เป็น UI sandbox เท่านั้น ไม่ใช่แหล่งรายได้/stock ถาวรของร้าน
+
+## Session Bill v4 — Flow ปัจจุบัน (แทน Prepaid v3)
+
+### Invariants
+
+หนึ่ง Session มีบิลหลักเพียงหนึ่งบิล ตรวจ uniqueness ใน validateState; Station assignment ชี้ Session ไม่ชี้รายได้ เริ่มเวลา/ต่อเวลา/สินค้า/ย้าย/จบไม่สร้าง payment ยอดรับเกิดเมื่อ payBill ตรวจและ settle ทุก charge เท่านั้น บิล PAID/REFUNDED immutable สำหรับรายการใหม่ ไม่เปิดเพิ่มรายการหรือรับเงินเต็มซ้ำ
+
+`start`: 25 นาที + base charge 2,000 สตางค์ + UNPAID ไม่มี receipt/payment; `extend`: +300,000ms และ extension charge 500 สตางค์ในบิลเดิม; `addBillProduct`: quantity/price/cost/name snapshot จาก catalog; `removeBillProduct`: ทำ void charge พร้อมเหตุผล ไม่ลบประวัติ
+
+`payBill`: ต้อง method/confirmation, expectedRevision และ expectedStationId (เมื่อ Session active) ตรวจ cancelled/pending approval/เคยรับเงินแล้ว รวมจำนวนสินค้าเดียวกันทุกบรรทัด ตรวจ stock/active จาก DB ล่าสุด แล้วบันทึก receipt เดียว, Payment ID กลุ่ม, ledger line Transaction IDs ที่แบ่งหมวด base/extension/product, stock movements, paidAt/paidBy/method/status และ audit ใน transaction เดียว ไม่สร้าง transaction รวมซ้อนกับยอด ledger ย่อย
+
+Stock ไม่มี reservation ระหว่างเปิดบิล เลือกตรวจ/ตัดตอนจ่ายตามข้อกำหนด สองบิลอาจเลือกรายการเดียวกัน แต่ผู้จ่ายทีหลังหากของหมดจะไม่ได้รับเงินบางส่วน ต้องแก้รายการหรือยกเลิกก่อนปล่อย Station การ cancelUnpaid จึงไม่เปลี่ยน inventory ไม่สร้าง stock movement ปลอม
+
+`finish`: server ปฏิเสธ PAYMENT_REQUIRED ถ้าไม่มีเงินรับ/ยังมีหนี้ ไม่ปล่อยจุด UI แสดงคำเตือนไปคิดเงิน `cancelUnpaid`: staff ทำพร้อมเหตุผล ยกเลิกบิล/Session โดยเก็บ charges/audit; paid cancel/refund ยังต้อง manager ไม่ลบรายการเดิม `restore` ใช้ deadline/bill เดิม ไม่มี payment ใหม่
+
+### Reporting และ historical receipts
+
+Bill.status เก็บและคำนวณสอดคล้องกับ finance เป็น UNPAID/PAID/CANCELLED/REFUNDED รายได้รวมเฉพาะ financial ledger ที่เกิดการ settlement สำเร็จ ไม่รวม charges ค้างชำระ เมื่อ refund หรือ VOID บิลที่เคย PAID ไม่ลบยอดรับเก่า รายงานคง payment แล้วหัก refund ตามวันคืน วิธีนี้ป้องกันยอดหายหรือหักซ้ำเมื่อบิลปัจจุบัน REFUNDED/CANCELLED
+
+รายงานบิลส่ง Bill/Session/Station/เวลาใช้/บริการ/สินค้า/ยอดแยก/ยอดรวม/cash/QR/paidAt/paidBy/payment+transaction references และสถานะครบ บิลในรายงานเลือกเปิด/จ่าย/มีธุรกรรมในช่วงวันที่ แสดงสถานะปัจจุบันและยอดสะสมบิล ส่วนรายงานรายรับเลือกเวลา transaction โดยตรง สองมุมมองอาจมีคนละจำนวนคิวตามวันเริ่มและวันจ่าย
+
+v2/v3 → v4 เก็บต้นฉบับใน schemaArchives โดยไม่ rewrite transactions/receipts/audit เก่า บิล Prepaid PAID ไม่เปิดหนี้ 20 บาทซ้ำ Local keys เก่าคงไว้ หากมีคำสั่งค้างของรุ่นเก่า ต้องตรวจและจบก่อนอัปเดต ไม่ตีความคำสั่ง Prepaid เก่าเป็นการรับเงินใหม่ตาม Flow ใหม่
+
+### ข้อจำกัดที่ยังอยู่
+
+Demo roles ยังไม่ใช่ authenticated identities, SQLite state JSON ยังเป็นโครงทดลอง, ไม่มี bank verification, ไม่มี production publish/HTTPS หรืออุปกรณ์จริง การคืนเงินทั้งบิลไม่ restock เอง แต่จำกัด refund ต้นทางทั้งจำนวน/เงินไม่ให้คืนสินค้าเพื่อคืนเงินซ้ำ หากสินค้ากลับมาหลัง refund ให้ผู้จัดการปรับ stock พร้อมเหตุผล รุ่นนี้ยังไม่มี workflow แก้บิล PAID เพื่อเพิ่มรายการ/เรียกเก็บเพิ่ม

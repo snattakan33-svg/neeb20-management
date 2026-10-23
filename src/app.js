@@ -1,5 +1,5 @@
-import {STORAGE_KEY,PREVIOUS_KEY,LEGACY_KEY,newId,createDemo,migrateLegacy,upgradeState,validateState,execute,status,sessionAt,finance,salesSummary,cartLines,total} from './domain.js';
-import {makeReport,reportCSV,bangkokDay} from './reports.js';
+import {STORAGE_KEY,PREVIOUS_KEY,OLDER_KEY,LEGACY_KEY,newId,createDemo,migrateLegacy,upgradeState,validateState,execute,status,sessionAt,finance,billLines,billStatus,salesSummary,cartLines,total} from './domain.js';
+import {makeReport,reportCSV,billsCSV,bangkokDay} from './reports.js';
 const $=s=>document.querySelector(s);
 const money=n=>new Intl.NumberFormat('th-TH',{style:'currency',currency:'THB'}).format(n);
 const cash=satang=>money(satang/100);
@@ -9,13 +9,13 @@ const labels={idle:'ว่าง พร้อมให้บริการ',act
 const financialLabels={unpaid:'ยังไม่ชำระ',paid:'ชำระแล้ว','refund-partial':'คืนเงินบางส่วน','refund-full':'คืนเงินเต็มจำนวน','cancelled-before-payment':'ยกเลิกก่อนรับเงิน'};
 let serverOffset=0;
 const appNow=()=>Date.now()+serverOffset;
-const PENDING_KEY='neeb20:pending:v3';
+const PENDING_KEY='neeb20:pending:v4';
 let state,mode=(location.protocol==='file:'||typeof NEEB20_STANDALONE!=='undefined')?'local-demo':'server-demo',busy=false,modal=null,activeActor='staff-01';
 const notified=new Map();
 function localRead(){
   const saved=localStorage.getItem(STORAGE_KEY);
   if(saved)return validateState(JSON.parse(saved));
-  const previous=localStorage.getItem(PREVIOUS_KEY),legacy=localStorage.getItem(LEGACY_KEY),initial=previous?upgradeState(JSON.parse(previous)):legacy?migrateLegacy(JSON.parse(legacy)):createDemo();
+  const previous=localStorage.getItem(PREVIOUS_KEY)||localStorage.getItem(OLDER_KEY),legacy=localStorage.getItem(LEGACY_KEY),initial=previous?upgradeState(JSON.parse(previous)):legacy?migrateLegacy(JSON.parse(legacy)):createDemo();
   localStorage.setItem(STORAGE_KEY,JSON.stringify(initial));return initial;
 }
 async function readState(){
@@ -38,7 +38,7 @@ async function commit(cmd,actorId=activeActor){const result=await dispatch(cmd,a
 function showDialog(title,body,type,getPayload){
   if(busy||modal)return;
   modal={type,getPayload,revision:state.revision,id:newId(),actorId:activeActor,pending:null};
-  $('#dialog-title').textContent=title;$('#dialog-body').innerHTML=body;$('#dialog-error').textContent='';$('#confirm-command').disabled=false;$('#confirm-command').textContent='ยืนยัน';$('#cancel-dialog').disabled=false;$('#confirm-dialog').showModal();
+  $('#dialog-title').textContent=title;$('#dialog-body').innerHTML=body;$('#dialog-error').textContent='';$('#confirm-command').hidden=false;$('#confirm-command').disabled=false;$('#confirm-command').textContent='ยืนยัน';$('#cancel-dialog').disabled=false;$('#confirm-dialog').showModal();
 }
 function closeDialog(){if(busy)return;$('#confirm-dialog').close();modal=null;}
 $('#cancel-dialog').onclick=closeDialog;
@@ -55,8 +55,16 @@ $('#confirm-form').addEventListener('submit',async e=>{
     else {$('#confirm-command').textContent='ลองคำสั่งเดิมอีกครั้ง';$('#dialog-body').querySelectorAll('input,select').forEach(el=>el.disabled=true);}
   }finally{busy=false;$('#confirm-command').disabled=false;$('#cancel-dialog').disabled=!!modal?.pending;}
 });
-$('#confirm-dialog').addEventListener('close',()=>{$('#confirm-command').hidden=false;});
-function sessionInfo(s){const f=finance(state,s.bill_id);return `<p><b>จุด ${s.station_id} · Session ${escape(s.session_id)}</b></p><p>เริ่ม ${date(s.startedAt)}<br>สิ้นสุด ${date(s.endsAt)}<br>เหลือ ${Math.max(0,Math.ceil((s.endsAt-appNow())/60000))} นาที (คำนวณจากเวลาสิ้นสุดเดิม)</p><p>ค่าบริการ ${cash(s.feeSatang)}<br>${financialLabels[f.status]} · รับแล้ว ${cash(f.paid)} · คืนแล้ว ${cash(f.refunded)} · ต้องชำระ ${cash(f.due)}</p>`;}
+$('#confirm-dialog').addEventListener('close',()=>{$('#confirm-command').type='submit';$('#confirm-command').onclick=null;});
+function sessionInfo(s){const f=finance(state,s.bill_id);return `<p><b>จุด ${s.station_id} · Session ${escape(s.session_id)}</b></p><p>เริ่ม ${date(s.startedAt)}<br>สิ้นสุด ${date(s.endsAt)}<br>เหลือ ${Math.max(0,Math.ceil((s.endsAt-appNow())/60000))} นาที (คำนวณจากเวลาสิ้นสุดเดิม)</p><p>Bill ${escape(s.bill_id)}<br>ค่าบริการ ${cash(s.feeSatang)} · ยอดบิลรวม ${cash(f.charged)}<br>${financialLabels[f.status]} · รับแล้ว ${cash(f.paid)} · คืนแล้ว ${cash(f.refunded)} · ต้องชำระ ${cash(f.due)}</p>`;}
+function billMarkup(s){
+ const f=finance(state,s.bill_id),bill=state.bills.find(b=>b.id===s.bill_id),mutable=f.paid===0&&!bill.cancelled;
+ return `<p>Bill ID: <b>${escape(s.bill_id)}</b> · ${billStatus(state,s.bill_id)}</p><div class="bill-items">${billLines(state,s.bill_id).map(l=>`<div class="cart-line"><div>${escape(l.name)} × ${l.quantity}<small>${cash(l.unitPriceSatang)} / ชิ้น</small></div><strong>${cash(l.amountSatang)}</strong>${mutable&&l.kind==='product'?`<button type="button" class="secondary" data-remove-charge="${escape(l.id)}" data-session="${escape(s.session_id)}">นำออก</button>`:''}</div>`).join('')}</div><p class="total">รวมทั้งสิ้น <b>${cash(f.charged)}</b></p><p>ชำระแล้ว ${cash(f.paid)} · ค้าง ${cash(f.due)} · คืนแล้ว ${cash(f.refunded)}</p>`;
+}
+const quickActions=new Map();
+function quickCommand(key,title,body,type,payload){
+ if(busy||modal)return;if(Date.now()-(quickActions.get(key)||0)<1500){setMessage('เพิ่งส่งคำสั่งนี้ กรุณารอสักครู่ก่อนกดอีกครั้ง');return;}quickActions.set(key,Date.now());showDialog(title,body,type,()=>payload);$('#confirm-form').requestSubmit();
+}
 function targetOptions(s){return state.stations.filter(t=>!t.session_id&&t.id!==s?.station_id).map(t=>`<option value="${t.id}">จุด ${t.id}</option>`).join('');}
 const reasonField='<label>เหตุผล (จำเป็น)<input id="reason" required maxlength="500"></label>';
 const reason=()=>$('#reason').value.trim();
@@ -67,10 +75,20 @@ function openSessionAction(type,s){
   if(type==='move'||type==='correct'){
     const options=targetOptions(s);if(!options){setMessage('ไม่มีจุดว่างสำหรับย้าย');return;}
     showDialog(type==='correct'?'แก้ไขจุดที่เริ่มผิด':'ย้ายจุด',sessionInfo(s)+`<label>จุดปลายทางที่ว่าง<select id="target">${options}</select></label>`+reasonField,'move',()=>({...base,targetStationId:Number($('#target').value),reason:reason(),correction:type==='correct'}));
-  }else if(type==='finish')showDialog('ยืนยันจบคิว · ตรวจจุดและ Session',sessionInfo(s)+'<p>กรุณาปิดไฟด้วยมือ การจบคิวไม่ใช่การรับเงิน และไม่สร้างบิลใหม่</p>','finish',()=>base);
-  else if(type==='extend')showDialog('รับชำระก่อนต่อเวลา 5 นาที / 5 บาท',sessionInfo(s)+'<p>รับชำระ 5 บาทก่อนเพิ่มเวลา ใช้ Session และบิลเดิม</p>'+paymentFields(),'extend',()=>({...base,...paymentPayload()}));
-  else if(type==='markUsed')showDialog('ยืนยันลูกค้าเริ่มใช้บริการจริง',sessionInfo(s)+'<p>บันทึกเวลาใช้จริงแยกจากเวลาเริ่มจับเวลา หากกดแล้วจะไม่สามารถอ้างว่ายังไม่ใช้บริการเพื่อคืนเต็มอัตโนมัติได้</p>','markUsed',()=>base);
-  else if(type==='requestCancel')showDialog('ส่งคำขอยกเลิก · รอผู้จัดการอนุมัติ',sessionInfo(s)+reasonField,'requestCancel',()=>({...base,reason:reason()}));
+  }else if(type==='finish'){
+    const f=finance(state,s.bill_id);if(f.due>0||f.paid===0){showDialog('บิลนี้ยังไม่ได้ชำระเงิน ต้องการไปหน้าคิดเงินหรือไม่?',sessionInfo(s)+billMarkup(s),'payBill',()=>({...base,...paymentPayload()}));$('#confirm-command').type='button';$('#confirm-command').textContent='ไปหน้าคิดเงิน';$('#confirm-command').onclick=event=>{event.preventDefault();closeDialog();$('#confirm-command').onclick=null;$('#confirm-command').type='submit';openSessionAction('payBill',s);};return;}
+    showDialog('ยืนยันจบคิว · ตรวจจุดและ Session',sessionInfo(s)+'<p>ปิดจุดเท่านั้น ไม่รับเงินหรือสร้างรายการขายใหม่</p>','finish',()=>base);
+  }
+  else if(type==='extend')quickCommand('extend:'+s.session_id,'กำลังต่อเวลา',sessionInfo(s),'extend',base);
+  else if(type==='addBillProduct'){
+    const products=state.products.filter(p=>p.active&&p.stock>0);if(!products.length){setMessage('ไม่มีสินค้าที่เปิดขายและมีสต๊อก');return;}
+    showDialog('เพิ่มสินค้าในบิล Station '+s.station_id,billMarkup(s)+`<label>เลือกสินค้าจาก POS<select id="bill-product">${products.map(p=>`<option value="${escape(p.id)}">${escape(p.sku)} · ${escape(p.name)} · ${money(p.price)} · เหลือ ${p.stock}</option>`).join('')}</select></label><label>จำนวน<input id="bill-quantity" type="number" min="1" step="1" value="1" required></label><p id="bill-preview"></p><p>ยังไม่ตัดสต๊อก/บันทึกรายรับ ตรวจสต๊อกซ้ำเมื่อชำระเงิน</p>`,'addBillProduct',()=>({...base,product_id:$('#bill-product').value,quantity:Number($('#bill-quantity').value)}));
+    const update=()=>{const p=products.find(p=>p.id===$('#bill-product').value),quantity=Number($('#bill-quantity').value);$('#bill-preview').textContent=`เพิ่ม ${money(p.price*quantity)} · รวมหลังเพิ่ม ${cash(finance(state,s.bill_id).charged+Math.round(p.price*100)*quantity)}`;};$('#bill-product').onchange=update;$('#bill-quantity').oninput=update;update();
+  }else if(type==='payBill'||type==='selectBill'){
+    const f=finance(state,s.bill_id),canPay=f.paid===0&&!state.bills.find(b=>b.id===s.bill_id).cancelled;
+    showDialog(canPay?'คิดเงิน / ชำระเงิน':'รายละเอียดบิล',sessionInfo(s)+billMarkup(s)+(canPay?paymentFields():''),'payBill',()=>({...base,...paymentPayload()}));if(!canPay)$('#confirm-command').hidden=true;
+  }
+  else if(type==='requestCancel'){const unpaid=finance(state,s.bill_id).paid===0;showDialog(unpaid?'ยกเลิกบริการและบิลที่ยังไม่ชำระ':'ส่งคำขอยกเลิก · รอผู้จัดการอนุมัติ',sessionInfo(s)+reasonField,unpaid?'cancelUnpaid':'requestCancel',()=>({...base,reason:reason()}));}
   else if(type==='approveCancel'){
     const f=finance(state,s.bill_id),used=s.usageIntervals?.length>0;
     showDialog('ผู้จัดการอนุมัติยกเลิกและพิจารณาคืนเงิน',sessionInfo(s)+`<p>คำขอจาก ${escape(s.cancelRequest.requestedBy)}: ${escape(s.cancelRequest.reason)}</p><label>การใช้บริการ<select id="unused">${used?'':'<option value="true">ยังไม่ได้ใช้จริง — ต้องคืนเต็มจำนวน</option>'}<option value="false">ใช้แล้ว — พิจารณาตามนโยบาย</option></select></label><label>ยอดคืน (บาท)<input id="refund-amount" type="number" min="0" max="${f.net/100}" step="0.01" value="${f.net/100}" required></label><p>ถ้าไม่คืนเงิน (0 บาท) ไม่ต้องเลือกช่องยืนยันคืนเงิน</p>`+reasonField+paymentFields(true),'approveCancel',()=>({...base,reason:reason(),unused:$('#unused').value==='true',refundAmountSatang:Math.round(Number($('#refund-amount').value)*100),...paymentPayload(true)}));
@@ -92,11 +110,11 @@ function tick(){
   }
 }
 function stations(){
-  $('#summary').textContent=`ว่าง ${state.stations.filter(s=>!s.session_id).length} / 12 จุด`;
-  $('#stations').innerHTML=state.stations.map(t=>{const s=sessionAt(state,t.id),f=s?finance(state,s.bill_id):null;
-    const btn=(action,label)=>`<button data-action="${action}" data-session="${escape(s.session_id)}" class="${action==='finish'?'':'secondary'}">${label}</button>`;
-    return `<article id="station-${t.id}" class="station"><h2>จุด ${String(t.id).padStart(2,'0')}</h2><span class="badge"></span><div class="timer" aria-label="เวลาคงเหลือ"></div><p>${s?`Session ${escape(s.session_id.slice(0,8))}<br>บริการ ${cash(s.feeSatang)} · สิ้นสุด ${date(s.endsAt)}<br>${financialLabels[f.status]}<br>รับแล้ว ${cash(f.paid)} · ค้าง ${cash(f.due)}`:'25 นาที · 20 บาท'}</p><div class="actions">${s?btn('extend','+5 นาที / 5฿')+(!s.usageIntervals?.some(i=>i.endedAt===null)?btn('markUsed','ยืนยันเริ่มใช้จริง'):'')+btn('move','ย้ายจุด')+btn('correct','แก้ไขจุดที่เริ่มผิด')+btn('finish','จบคิว')+(f.due?btn('selectBill','รับยอดค้างรุ่นเก่า'):'')+(s.cancelRequest?'<p>รออนุมัติยกเลิก</p>':btn('requestCancel','ขอยกเลิก')):`<button data-start="${t.id}">เริ่มคิว 20฿</button>`}</div></article>`;
-  }).join('');tick();
+ $('#summary').textContent=`ว่าง ${state.stations.filter(s=>!s.session_id).length} / 12 จุด`;
+ $('#stations').innerHTML=state.stations.map(t=>{const s=sessionAt(state,t.id),f=s?finance(state,s.bill_id):null;
+  const btn=(action,label)=>`<button data-action="${action}" data-session="${escape(s.session_id)}" ${f.paid>0&&['extend','addBillProduct'].includes(action)?'disabled title="บิลชำระแล้ว ล็อกรายการเพื่อไม่เปลี่ยนยอดรับ"':''} class="${action==='payBill'?'':'secondary'}">${label}</button>`;
+  return `<article id="station-${t.id}" class="station"><h2>จุด ${String(t.id).padStart(2,'0')}</h2><span class="badge"></span><div class="timer" aria-label="เวลาคงเหลือ"></div><p>${s?`ยอดปัจจุบัน <b>${cash(f.charged)}</b><br>${billStatus(state,s.bill_id)} · Session ${escape(s.session_id.slice(0,8))}`:'25 นาที · 20 บาท'}</p><div class="actions">${s?btn('extend','+5 นาที / 5฿')+btn('addBillProduct','เพิ่มสินค้า')+btn('move','ย้ายจุด')+btn('payBill',f.paid>0?'ดูบิล · ชำระแล้ว':'คิดเงิน / ชำระเงิน')+btn('finish','จบคิว')+btn('requestCancel','ยกเลิก'):`<button data-start="${t.id}">เริ่มคิว 20฿</button>`}</div></article>`;
+ }).join('');tick();
 }
 function products(){
  const query=$('#search').value.trim().toLowerCase(),manager=state.employees.find(e=>e.id===activeActor)?.role==='manager';
@@ -106,7 +124,7 @@ function products(){
  $('#sales-history').innerHTML=state.transactions.filter(t=>t.type==='payment'&&t.category==='product').slice(-30).reverse().map(t=>{
    const returned=state.transactions.filter(r=>r.type==='refund'&&r.original_transaction_id===t.id).reduce((n,r)=>n+(r.quantity||0),0);
    return `<div class="session-record">${escape(state.products.find(p=>p.id===t.product_id)?.name||t.product_id)} · ขาย ${t.quantity} · คืนแล้ว ${returned}<p>${date(t.at)} · ${escape(t.id)} · ${cash(t.amountSatang)} · ${escape(t.method)}</p>${manager&&returned<t.quantity?`<button data-return="${escape(t.id)}">คืนสินค้าทดสอบ</button>`:''}</div>`;
- }).join('')||'<p>ยังไม่มีรายการขายสินค้ารุ่น Prepaid</p>';
+ }).join('')||'<p>ยังไม่มีรายการขายสินค้าทดสอบ</p>';
 }
 function productAction(type,p){
  if(type==='editProduct'){
@@ -119,14 +137,15 @@ function reports(){
   const report=makeReport(state,{mode:$('#report-mode').value,day:$('#report-day').value,month:$('#report-month').value,from:$('#report-from').value,to:$('#report-to').value},appNow()),s=report.summary;
   $('#report-error').textContent='';$('#report-summary').innerHTML=`<p>ข้อมูลทดสอบ · ${report.range.from} ถึง ${report.range.to} (Asia/Bangkok)</p><div class="report-grid">${[['บริการหนีบ20',s.base],['ต่อเวลา',s.extension],['สินค้า',s.product],['ข้อมูลเก่าไม่ระบุหมวด',s.legacy],['รับเงินรวม',s.received],['คืนเงินรวม',s.refunded],['รายได้สุทธิ',s.net],['เงินสดสุทธิ',s.cash.net],['QR สุทธิ',s.qr.net],['ช่องทางเก่าไม่ระบุสุทธิ',s.unknown.net]].map(([label,n])=>`<div><small>${label}</small><strong>${cash(n)}</strong></div>`).join('')}</div><p>เงินสด: รับ ${cash(s.cash.received)} / คืน ${cash(s.cash.refunded)} · QR: รับ ${cash(s.qr.received)} / คืน ${cash(s.qr.refunded)}</p><p>คิวเริ่มในช่วงนี้ ${report.sessionCount} · ในกลุ่มนี้จบ ${report.finishedCount} / ยกเลิก ${report.cancelledCount}<br>เหตุการณ์จบในช่วงวันที่ ${report.finishedInRange} / ยกเลิก ${report.cancelledInRange} (อาจเป็นคิวเริ่มก่อนช่วงวันที่)</p>`;
   $('#report-sessions').innerHTML=report.sessions.map(s=>`<div class="session-record"><b>${escape(s.session_id)}</b><p>จุด ${s.stationHistory.join(' → ')} · ย้าย ${s.moves} ครั้ง · ${labels[s.status]}<br>เริ่มจับเวลา ${date(s.startedAt)} · กำหนดสิ้นสุด ${date(s.endsAt)}<br>จบจริง ${date(s.finishedAt)} · ยกเลิก ${date(s.cancelledAt)}<br>ใช้งานจริงตามการยืนยัน ${s.usageMilliseconds===null?'ยังไม่ยืนยัน / ข้อมูลเก่าไม่ทราบ':Math.floor(s.usageMilliseconds/60000)+' นาที '+Math.floor(s.usageMilliseconds/1000)%60+' วินาที'}</p></div>`).join('')||'<p>ไม่มี Session ที่เริ่มในช่วงนี้</p>';
+  $('#report-bills').innerHTML=report.bills.map(b=>`<div class="session-record"><b>Bill ${escape(b.bill_id)} · ${b.status}</b><p>Session ${escape(b.session_id||'ขายสินค้า POS')} · Station ${b.station_id??'—'}<br>เริ่ม ${date(b.startedAt)} · จบ ${date(b.finishedAt)} · ใช้งาน ${b.usageMilliseconds===null?'ไม่ทราบ':Math.floor(b.usageMilliseconds/1000)+' วินาที'}<br>${b.lines.map(l=>`${escape(l.name)} × ${l.quantity} = ${cash(l.amountSatang)}`).join('<br>')}<br>บริการ ${cash(b.serviceSatang)} · สินค้า ${cash(b.productSatang)} · รวม ${cash(b.totalSatang)}<br>รับสด ${cash(b.cashSatang)} · รับ QR ${cash(b.qrSatang)} · คืน ${cash(b.refundedSatang)}<br>ชำระ ${date(b.paidAt)} · ${escape(b.paidBy||'—')} · ${escape(b.paymentMethod||'—')}<br>Payment ${escape(b.payment_id||'—')}<br>Transaction ${b.transaction_ids.map(escape).join(', ')}</p></div>`).join('')||'<p>ไม่มีบิลในช่วงนี้</p>';
   $('#report-transactions').innerHTML=report.transactions.slice().reverse().map(t=>`<div class="session-record"><b>${t.type==='refund'?'คืนเงิน':'รับเงิน'} ${cash(t.amountSatang)} · ${escape(t.category||'legacy')} · ${escape(t.method||'unknown')}</b><p>${date(t.at)} · ${escape(t.employee_id)}<br>Transaction ${escape(t.id)}<br>Session ${escape(t.session_id||'—')} · บิล ${escape(t.bill_id||'—')}<br>อ้างอิงเดิม ${escape(t.original_transaction_id||'—')}<br>${escape(t.reason||'')}</p></div>`).join('')||'<p>ไม่มีธุรกรรมในช่วงนี้</p>';
   $('#report-refunds').textContent=`รายการคืนเงิน ${report.refunds.length} รายการ · ${cash(s.refunded)} (ดูรหัสอ้างอิงในประวัติธุรกรรมด้านล่าง)`;return report;
- }catch(e){$('#report-error').textContent=e.message;$('#report-summary').textContent='';$('#report-sessions').textContent='';$('#report-transactions').textContent='';$('#report-refunds').textContent='';return null;}
+ }catch(e){$('#report-error').textContent=e.message;$('#report-summary').textContent='';$('#report-sessions').textContent='';$('#report-transactions').textContent='';$('#report-refunds').textContent='';$('#report-bills').textContent='';return null;}
 }
 function records(){
   const manager=state.employees.find(e=>e.id===activeActor)?.role==='manager';
   $('#sessions').innerHTML=state.sessions.slice().reverse().map(s=>{const f=finance(state,s.bill_id);const btn=(action,label)=>`<button class="secondary" data-record="${action}" data-session="${escape(s.session_id)}">${label}</button>`;
-    return `<article class="session-record"><b>จุด ${s.station_id} · ${escape(s.session_id)}</b><p>${labels[status(s,appNow())]} · ${financialLabels[f.status]}<br>บิล ${escape(s.bill_id)} · บริการ ${cash(f.charged)} · รับแล้ว ${cash(f.paid)} · คืนแล้ว ${cash(f.refunded)} · ค้าง ${cash(f.due)}</p><div class="actions">${f.due?btn('selectBill','เรียกเก็บเงิน'):''}${s.serviceStatus!=='cancelled'&&!s.cancelRequest?btn('requestCancel','ขอยกเลิก'):''}${s.cancelRequest?(manager?btn('approveCancel','อนุมัติยกเลิก'):'<span>รอผู้จัดการอนุมัติยกเลิก</span>'):''}${manager&&s.serviceStatus==='finished'?btn('restore','กู้คืนคิว'):''}${manager&&f.net>0?btn('refund','คืนเงินทดสอบ'):''}</div><details><summary>ประวัติคิว ${s.history.length} เหตุการณ์</summary><pre>${escape(JSON.stringify(state.audit.filter(a=>a.session_id===s.session_id),null,2))}</pre></details></article>`;
+    return `<article class="session-record"><b>จุด ${s.station_id} · ${escape(s.session_id)}</b><p>${labels[status(s,appNow())]} · ${financialLabels[f.status]}<br>บิล ${escape(s.bill_id)} · ${billStatus(state,s.bill_id)} · รวม ${cash(f.charged)} · รับแล้ว ${cash(f.paid)} · คืนแล้ว ${cash(f.refunded)} · ค้าง ${cash(f.due)}</p><div class="actions">${f.due?btn('payBill','คิดเงิน / ชำระเงิน'):''}${s.serviceStatus!=='cancelled'&&!s.cancelRequest?btn('requestCancel','ขอยกเลิก'):''}${s.cancelRequest?(manager?btn('approveCancel','อนุมัติยกเลิก'):'<span>รอผู้จัดการอนุมัติยกเลิก</span>'):''}${manager&&s.serviceStatus==='finished'?btn('restore','กู้คืนคิว'):''}${manager&&f.net>0?btn('refund','คืนเงินทดสอบ'):''}</div><details><summary>ประวัติคิว ${s.history.length} เหตุการณ์</summary><pre>${escape(JSON.stringify(state.audit.filter(a=>a.session_id===s.session_id),null,2))}</pre></details></article>`;
   }).join('')||'<p>ยังไม่มีคิวทดสอบ</p>';
   const summary=salesSummary(state);$('#financial-summary').textContent=`รับเงินทดสอบ ${cash(summary.received)} · คืนเงินทดสอบ ${cash(summary.refunded)} · สุทธิ ${cash(summary.net)}`;
   $('#audit').innerHTML=state.audit.slice(-50).reverse().map(a=>`<details><summary>${escape(a.type)} · ${escape(a.employee_id)} · ${date(a.at)}</summary><pre>${escape(JSON.stringify(a,null,2))}</pre></details>`).join('')||'<p>ยังไม่มีเหตุการณ์</p>';
@@ -139,7 +158,8 @@ function render(){
   const last=state.receipts.at(-1);$('#receipt').innerHTML=last?`<b>บิลทดสอบล่าสุด · ไม่ใช่หลักฐานรับเงินจริง</b><br>${escape(last.id)}<br>${date(last.createdAt)}<br>${last.lines.map(l=>`${escape(l.name)} × ${l.quantity} — ${money(l.price*l.quantity)}`).join('<br>')}<br><b>รวม ${money(last.total)}</b>`:'';
 }
 // Small cart mutations are also confirmed, revision-checked commands.
-$('#stations').onclick=e=>{const start=e.target.closest('[data-start]'),b=e.target.closest('[data-action]');if(start)showDialog('รับชำระก่อนเริ่มบริการ',`<p>จุด ${Number(start.dataset.start)} · 25 นาที / 20 บาท</p><p>เริ่มเวลาเมื่อยืนยันรับชำระสำเร็จเท่านั้น ตรวจสอบจุดและเปิดไฟด้วยมือ</p>`+paymentFields(),'start',()=>({station_id:Number(start.dataset.start),...paymentPayload()}));else if(b){const s=state.sessions.find(s=>s.session_id===b.dataset.session);if(s)openSessionAction(b.dataset.action,s);}};
+$('#stations').onclick=e=>{const start=e.target.closest('[data-start]'),b=e.target.closest('[data-action]');if(start)quickCommand('start:'+start.dataset.start,'กำลังเริ่มคิว',`<p>จุด ${Number(start.dataset.start)} · 25 นาที / 20 บาท · บิลยังไม่ชำระ</p>`,'start',{station_id:Number(start.dataset.start)});else if(b){const s=state.sessions.find(s=>s.session_id===b.dataset.session);if(s)openSessionAction(b.dataset.action,s);}};
+$('#dialog-body').addEventListener('click',e=>{const b=e.target.closest('[data-remove-charge]');if(!b||busy||modal?.pending)return;const s=state.sessions.find(s=>s.session_id===b.dataset.session);closeDialog();showDialog('นำสินค้าออกจากบิลที่ยังไม่ชำระ',reasonField,'removeBillProduct',()=>({session_id:s.session_id,expectedStationId:s.station_id,charge_id:b.dataset.removeCharge,reason:reason()}));});
 $('#sessions').onclick=e=>{const b=e.target.closest('[data-record]');if(b){const s=state.sessions.find(s=>s.session_id===b.dataset.session);if(s)openSessionAction(b.dataset.record,s);}};
 $('#products').onclick=e=>{const action=e.target.closest('[data-product-action]'),b=e.target.closest('[data-product]');if(action){productAction(action.dataset.productAction,state.products.find(p=>p.id===action.dataset.productId));return;}if(b)showDialog('เพิ่มสินค้าทดสอบในตะกร้า',`<p>${escape(state.products.find(p=>p.id===b.dataset.product).name)} × 1</p>`,'addCart',()=>({product_id:b.dataset.product}));};
 $('#sales-history').onclick=e=>{const b=e.target.closest('[data-return]');if(!b)return;const tx=state.transactions.find(t=>t.id===b.dataset.return),returned=state.transactions.filter(t=>t.type==='refund'&&t.original_transaction_id===tx.id).reduce((n,t)=>n+(t.quantity||0),0);showDialog('ผู้จัดการคืนสินค้าและคืนเงิน',`<p>อ้างอิง ${escape(tx.id)} · คืนได้ ${tx.quantity-returned} ชิ้น · ราคาต่อชิ้น ${cash(tx.unitPriceSatang)}</p><label>จำนวนคืน<input id="return-quantity" type="number" min="1" max="${tx.quantity-returned}" step="1" value="1" required></label><label class="check"><input id="restock" type="checkbox" checked>รับสินค้าคืนเข้าสต๊อก</label>`+reasonField+paymentFields(true),'returnProduct',()=>({transaction_id:tx.id,quantity:Number($('#return-quantity').value),restock:$('#restock').checked,reason:reason(),...paymentPayload(true)}));};
@@ -151,9 +171,10 @@ $('#actor').onchange=()=>{activeActor=$('#actor').value;if(state){records();prod
 $('#export').onclick=async()=>{try{const latest=await readState(),blob=new Blob([JSON.stringify(latest,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`neeb20-demo-backup-${Date.now()}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}catch(e){setMessage(e.message);}};
 $('#report-controls').onchange=()=>{if(state)reports();};
 $('#export-csv').onclick=()=>{const report=reports();if(!report)return;const url=URL.createObjectURL(new Blob([reportCSV(report)],{type:'text/csv;charset=utf-8'})),a=document.createElement('a');a.href=url;a.download=`neeb20-demo-report-${report.range.from}-${report.range.to}.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
+$('#export-bills-csv').onclick=()=>{const report=reports();if(!report)return;const url=URL.createObjectURL(new Blob([billsCSV(report)],{type:'text/csv;charset=utf-8'})),a=document.createElement('a');a.href=url;a.download=`neeb20-demo-bills-${report.range.from}-${report.range.to}.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
 async function init(){try{
   state=await readState();const today=bangkokDay(appNow());$('#report-day').value=today;$('#report-month').value=today.slice(0,7);$('#report-from').value=today;$('#report-to').value=today;$('#actor').innerHTML=state.employees.map(e=>`<option value="${escape(e.id)}">${escape(e.name)} (${e.role})</option>`).join('');
-  $('#mode').textContent=mode==='server-demo'?'SERVER DEMO · SQLite กลางบนเครื่องเซิร์ฟเวอร์ · หลายเครื่องต้องเปิดเซิร์ฟเวอร์เดียวกัน · Prepaid':'LOCAL DEMO · ทดลองหน้าจอเท่านั้น ยอดนี้ไม่ใช่ฐานรายได้ร้าน ใช้ Server Demo เพื่อเก็บข้อมูลถาวร ห้ามใช้รับเงินจริง';render();
+  $('#mode').textContent=mode==='server-demo'?'SERVER DEMO · SQLite กลางบนเครื่องเซิร์ฟเวอร์ · หลายเครื่องต้องเปิดเซิร์ฟเวอร์เดียวกัน · บิลประจำ Session':'LOCAL DEMO · ทดลองหน้าจอเท่านั้น ยอดนี้ไม่ใช่ฐานรายได้ร้าน ใช้ Server Demo เพื่อเก็บข้อมูลถาวร ห้ามใช้รับเงินจริง';render();
   const pending=JSON.parse(sessionStorage.getItem(PENDING_KEY)||'null');if(pending){if(state.commands.some(c=>c.id===pending.command.id)){sessionStorage.removeItem(PENDING_KEY);setMessage('คำสั่งก่อนรีเฟรชบันทึกสำเร็จแล้ว ไม่บันทึกซ้ำ');}else{showDialog('ตรวจสอบคำสั่งค้างจากก่อนรีเฟรช',`<p>ส่งคำสั่งเดิมเท่านั้น เพื่อป้องกันรับเงินซ้ำ</p><pre>${escape(JSON.stringify(pending.command,null,2))}</pre>`,pending.command.type,()=>pending.command.payload);Object.assign(modal,{id:pending.command.id,revision:pending.command.expectedRevision,actorId:pending.actorId,pending:pending.command});$('#cancel-dialog').disabled=true;}}
   setInterval(tick,1000);setInterval(async()=>{if(busy||modal)return;try{const latest=await readState();if(latest.revision!==state.revision){state=latest;render();}}catch{setMessage('ติดต่อแหล่งข้อมูลไม่ได้ อย่ารับเงินจริง ตรวจการเชื่อมต่อก่อนทำรายการ');}},2000);
 }catch(e){setMessage(`เปิดข้อมูลไม่ได้: ${e.message} · ข้อมูลเดิมไม่ได้ถูกล้าง กรุณาสำรองข้อมูลและตรวจสอบก่อน`);document.querySelectorAll('button').forEach(b=>b.disabled=true);}}
