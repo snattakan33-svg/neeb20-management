@@ -2,7 +2,7 @@
 
 ## เทคโนโลยีที่เสนอ
 
-ต้นแบบปัจจุบันเป็น frontend แบบไม่มี dependency บันทึก localStorage สำหรับทดสอบเท่านั้น แยกกฎธุรกิจใน domain.js เพื่อให้ย้ายไป server ได้ ไม่ควรใช้ localStorage เป็นฐานข้อมูลขายจริง
+ต้นแบบปัจจุบันมี Server Demo (Node built-in SQLite) และ Local Demo (localStorage แยกเครื่อง) ใช้ command handler ชุดเดียวกันใน domain.js ทุกข้อมูลยังเป็นข้อมูลทดสอบ ไม่ควรใช้ฐาน demo หรือ localStorage เป็นฐานขายจริง
 
 | ทางเลือก | ข้อดี | ข้อจำกัด / ความเหมาะสม |
 | --- | --- | --- |
@@ -45,3 +45,25 @@
 ## อุปกรณ์หน้าร้าน
 
 เครื่องสแกนที่จำลอง keyboard อาจใช้ช่องค้นหาบาร์โค้ดได้ แต่ต้องทดสอบรุ่น/ภาษาแป้นพิมพ์/การต่อ iPad จริง โค้ดรอบนี้ค้นหาเท่านั้น ยังไม่เพิ่มอัตโนมัติเมื่อยิงบาร์โค้ด เครื่องพิมพ์ควรทดลอง vendor SDK, network bridge หรือเครื่อง Windows เป็น print agent ตามรุ่น Safari ไม่รับประกัน WebUSB/Bluetooth หรือ ESC/POS โดยตรง ลิ้นชักมักสั่งผ่าน printer จึงต้องยืนยันรุ่นและการเชื่อมต่อก่อนจัดซื้อ รอบนี้ยังไม่มีการเชื่อมต่ออุปกรณ์และไม่มีคำสั่งเปิด–ปิดไฟ
+
+
+## ส่วนบันทึกข้อมูลที่พัฒนาแล้วในรอบ Station safety
+
+- `GET /api/state` อ่าน snapshot; `POST /api/commands` รับ `{actorId, command: {id, type, payload, expectedRevision}}` เก็บ state ใน `.data/demo.sqlite` ไม่ส่งไฟล์ฐานข้อมูลผ่าน HTTP
+- `DemoStore.dispatch` ใช้ SQLite `BEGIN IMMEDIATE` อ่าน state ล่าสุด ตรวจ idempotency และ revision ตรวจสิทธิ์/จุดว่าง/ยอดเงิน/stock แล้วเขียน state ใหม่และ COMMIT พร้อมกัน หากล้มเหลว ROLLBACK ทั้งคำสั่ง รองรับหนึ่งไฟล์ฐานท้องถิ่น ไม่ให้วางบน network drive
+- คำสั่งเดิม + payload/ผู้ดำเนินการเดิมจะได้ผลเดิม แม้ revision เปลี่ยนแล้ว คำสั่ง ID เดิมแต่เนื้อหาต่างถูกปฏิเสธ คำสั่งใหม่ที่ revision เก่าตอบ 409 หน้าจอบังคับปิดหน้าต่างและตรวจใหม่ ไม่เปลี่ยน revision แล้ว retry เอง
+- ตรวจ `expectedStationId` สำหรับคำสั่งคิวที่กำลังใช้เพื่อกันกดจากจุดเก่าหลังย้าย ใช้ Session ID ไม่ค้นหาคิวจากหมายเลขจุดเพียงอย่างเดียว
+- บิลสร้างตั้งแต่เริ่ม Session; charges เพิ่มแบบ append; ย้าย/จบ/กู้คืนไม่สร้างบิลหรือ financial transaction; payment/refund เป็นรายการแยกมี ID เฉพาะ และรายงานรวมจากรายการนี้
+- `finance.due` คือ charge ที่ยังไม่เคยรับชำระ (`charged - grossPaid`) ไม่เปิดหนี้ใหม่หลัง refund โดยอัตโนมัติ; รายการ refund แยกและไม่แก้ payment เดิม การคืนบางส่วน/เต็มจำนวนยังแสดงยอดคืนและยอดรับเดิมครบ
+- คำสั่งยกเลิกตั้งธงยกเลิกบิลและหยุดเรียกเก็บยอดค้าง แต่ไม่แก้ประวัติ charges/payment/refund ผู้จัดการต้องอนุมัติคำขอพร้อมเหตุผล เงินที่รับแล้วต้องคืนด้วยคำสั่งแยก
+- UI ล็อกปุ่มระหว่างประมวลผลและเก็บ command เดิมไว้เมื่อผลเครือข่ายไม่แน่นอน การส่งซ้ำจึงไม่เกิดรับเงิน/ต่อเวลาเพิ่มซ้ำ หลัง reload ต้องอ่าน state จาก server ก่อนทำคำสั่งใหม่
+- ไม่มี API ลบ history/transactions หรือ reset database ปุ่มสำรองส่งออก state ทั้งหมด พนักงานทดสอบมี ID คงที่ ไม่ใช่ชื่อที่พิมพ์เอง
+
+### ช่องว่างก่อน production (ยังไม่ใช่ระบบรักษาความปลอดภัยจริง)
+
+1. Actor ใน Demo รับจาก client และเลือกบทบาทได้ ต้องแทนด้วย server-side authenticated session, CSRF protection/token ตามรูปแบบ deploy, role assignment ของผู้ดูแลจริง และ manager approval ที่พิสูจน์ตัวตนได้ ห้ามเอา demo role selector ไปใช้จริง
+2. แยก schema เป็น sessions/station assignments/bills/charges/transactions/idempotency keys/audit พร้อม foreign keys, unique active station/session, unique financial references และ database constraints ชนิดเงิน/สถานะ โครง JSON หนึ่งแถวใน SQLite เป็นจุดเริ่มทดสอบ atomicity ไม่ใช่ schema production ที่พร้อมขยาย
+3. ให้ append-only journal/immutable audit มีสิทธิ์ฐานข้อมูลและการตรวจ tampering, backup/versioned export และ recovery test จริง ผู้ดูแลไฟล์ SQLite ยังแก้ข้อมูลภายนอกแอปได้
+4. ทดสอบ clock skew และใช้ server time offset สำหรับ countdown บนหลายเครื่อง เพิ่ม payment provider verification/reconciliation ก่อนเชื่อมเงินจริง และแยก key/database/network สำหรับ production จาก demo โดยเด็ดขาด
+5. ตอนนี้มี shared POS cart หนึ่งชุด ถ้าต้องการหลายแคชเชียร์แยกบิล ให้เพิ่ม draft order ownership และ register ID ไม่ใช้ shared cart เดียว
+6. ถ้าขยายไปหลาย server instances ใช้ PostgreSQL/transactional normalized schema; ไม่แชร์ไฟล์ SQLite ข้ามเครื่องหรือใช้ Sheets เป็น concurrent transaction engine
