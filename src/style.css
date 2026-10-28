@@ -7,3 +7,4 @@ select{font:inherit;min-height:48px;max-width:100%;border:1px solid #adbfb3;bord
 .table-scroll{overflow-x:auto;max-width:100%;margin:18px 0}table{width:100%;border-collapse:collapse;background:white}th,td{padding:12px;text-align:left;vertical-align:top;border-bottom:1px solid #d9e0d6}th{background:#e7eee5;white-space:nowrap}td small{display:block}.sku-actions{display:flex;flex-wrap:wrap;gap:6px;min-width:200px}.product-photo{display:block;width:64px;height:64px;object-fit:contain;border-radius:8px;margin-bottom:8px}#stock-counts button{margin:4px}#sku-menu{min-width:0}#sku-menu select{width:100%}
 
 .product-photo-empty{display:block;font-size:12px;color:#62736c;margin-bottom:8px}#product-form-message{color:#7f321d;overflow-wrap:anywhere}#product-form-message:empty{display:none}
+.main-nav a[hidden]{display:none}

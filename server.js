@@ -7,7 +7,7 @@ import {fileURLToPath} from 'node:url';
 import {resolve} from 'node:path';
 import {makeReport} from './src/reports.js';
 import {DemoStore} from './server/store.js';
-const files = {'/src/inventory.js':'src/inventory.js','/src/inventory-reports.js':'src/inventory-reports.js','/src/costing.js':'src/costing.js','/src/profit.js':'src/profit.js','/':'index.html','/src/app.js':'src/app.js','/src/domain.js':'src/domain.js','/src/reports.js':'src/reports.js','/src/shifts.js':'src/shifts.js','/src/style.css':'src/style.css','/NEEB20-DEMO.html':'NEEB20-DEMO.html'};
+const files = {'/src/browser-store.js':'src/browser-store.js','/src/inventory.js':'src/inventory.js','/src/inventory-reports.js':'src/inventory-reports.js','/src/costing.js':'src/costing.js','/src/profit.js':'src/profit.js','/':'index.html','/src/app.js':'src/app.js','/src/domain.js':'src/domain.js','/src/reports.js':'src/reports.js','/src/shifts.js':'src/shifts.js','/src/style.css':'src/style.css','/NEEB20-DEMO.html':'NEEB20-DEMO.html'};
 const types = {html:'text/html; charset=utf-8',js:'text/javascript; charset=utf-8',css:'text/css; charset=utf-8'};
 export function createServer(store){
   return http.createServer(async (req,res) => {

@@ -1,3 +1,4 @@
+import {BrowserStore,browserBackup,parseBrowserBackup} from './browser-store.js';
 import {productAvailability} from './inventory.js';
 import {makeInventoryReport,inventoryCSV} from './inventory-reports.js';
 import {COST_FIELDS,estimatedCost,costVisibleState} from './costing.js';
@@ -15,7 +16,9 @@ const financialLabels={unpaid:'ยังไม่ชำระ',paid:'ชำร�
 let serverOffset=0;
 const appNow=()=>Date.now()+serverOffset;
 const PENDING_KEY='neeb20:pending:v5';
-let state,mode=(location.protocol==='file:'||typeof NEEB20_STANDALONE!=='undefined')?'local-demo':'server-demo',busy=false,modal=null,activeActor='staff-01';
+const browserOnly=typeof NEEB20_BROWSER_ONLY!=='undefined'&&NEEB20_BROWSER_ONLY;
+const browserDatabase=browserOnly?new BrowserStore():null;
+let state,mode=browserOnly?'browser-demo':(location.protocol==='file:'||typeof NEEB20_STANDALONE!=='undefined')?'local-demo':'server-demo',busy=false,modal=null,activeActor='staff-01';
 const notified=new Map();
 function localRead(){
   const saved=localStorage.getItem(STORAGE_KEY);
@@ -24,10 +27,12 @@ function localRead(){
   localStorage.setItem(STORAGE_KEY,JSON.stringify(initial));return initial;
 }
 async function readState(){
+  if(browserOnly)return costVisibleState(await browserDatabase.read(),activeActor);
   if(mode==='local-demo')return costVisibleState(localRead(),activeActor);
   const r=await fetch('/api/state',{cache:'no-store',headers:{'X-NEEB20-Actor':activeActor}});if(!r.ok)throw Error('ติดต่อเซิร์ฟเวอร์ไม่ได้ ยังไม่บันทึกคำสั่ง');const body=await r.json();serverOffset=body.serverNow-Date.now();return validateState(body.state);
 }
 async function dispatch(command,actorId){
+  if(browserOnly){const result=await browserDatabase.dispatch(command,actorId);return {...result,state:costVisibleState(result.state,actorId)};}
   if(mode==='local-demo'){
     const write=()=>{const result=execute(localRead(),command,actorId);localStorage.setItem(STORAGE_KEY,JSON.stringify(result.state));return {...result,state:costVisibleState(result.state,actorId)};};
     return navigator.locks? navigator.locks.request('neeb20-demo-writes',write):write();
@@ -181,7 +186,11 @@ $('#clear-product-photo').onclick=()=>{$('#product-form [name="photo"]').value='
 $('#product-form').addEventListener('invalid',e=>{$('#product-form-message').textContent='ตรวจสอบช่อง '+(e.target.closest('label')?.textContent.trim()||e.target.name)+' — '+e.target.validationMessage;},true);
 $('#checkout').onclick=()=>showDialog('ยืนยันรับเงินทดสอบ',`<p>รวม ${money(total(cartLines(state)))}</p><p>จำลองรับเงินเท่านั้น ไม่เชื่อมธนาคาร คำสั่งเดิมบันทึกได้ครั้งเดียว</p>`+paymentFields(),'checkout',()=>paymentPayload());
 $('#actor').onchange=async()=>{if(busy||modal){$('#actor').value=activeActor;return;}activeActor=$('#actor').value;try{state=await readState();render();}catch(e){setMessage(e.message);}};
-$('#export').onclick=async()=>{try{const latest=await readState(),blob=new Blob([JSON.stringify(costVisibleState(latest,activeActor),null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`neeb20-demo-backup-${Date.now()}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}catch(e){setMessage(e.message);}};
+$('#export').onclick=async()=>{try{
+ if(browserOnly&&state.employees.find(e=>e.id===activeActor)?.role!=='manager')throw Error('เลือกผู้จัดการก่อนสำรองข้อมูล เพื่อเก็บต้นทุนและประวัติครบ');
+ const latest=browserOnly?await browserDatabase.read():await readState(),data=browserOnly?await browserBackup(latest):costVisibleState(latest,activeActor),blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`neeb20-demo-backup-${Date.now()}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+ if(browserOnly){localStorage.setItem('neeb20:last-backup-at',String(Date.now()));$('#browser-backup-status').textContent='เตรียมไฟล์สำรองแล้ว โปรดตรวจว่าไฟล์ถูกบันทึกใน Files/iCloud Drive จริง';}
+ }catch(e){setMessage(e.message);}};
 $('#report-controls').onchange=()=>{if(state)reports();};
 $('#export-csv').onclick=()=>{const report=reports();if(!report)return;const url=URL.createObjectURL(new Blob([reportCSV(report)],{type:'text/csv;charset=utf-8'})),a=document.createElement('a');a.href=url;a.download=`neeb20-demo-report-${report.range.from}-${report.range.to}.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
 const reconcileLabels={MATCH:'ยอดตรง',SHORT:'เงินขาด',OVER:'เงินเกิน',PENDING:'รอตรวจสอบ'};
@@ -288,9 +297,20 @@ for(const id of ['sku-search','sku-category','sku-status'])$('#'+id).addEventLis
 $('#new-sku').onclick=()=>{const details=$('#product-form').closest('details');details.open=true;details.scrollIntoView({behavior:'smooth'});$('#product-form [name="sku"]').focus();};
 $('#stock-counts').onclick=e=>{const b=e.target.closest('[data-count-review]');if(!b)return;const c=state.stockCounts.find(c=>c.id===b.dataset.count);showDialog(b.dataset.countReview==='approveStockCount'?'อนุมัติผลตรวจนับ':'ปฏิเสธผลตรวจนับ',`<p>${escape(c.sku)} ระบบเดิม ${c.systemStock} / นับ ${c.counted} · จะตรวจสอบการเคลื่อนไหวอีกครั้งก่อนบันทึก</p>`+reasonField,b.dataset.countReview,()=>({count_id:c.id,reason:reason()}));};
 $('#export-inventory').onclick=()=>{const r=reports();if(!r)return;const report=renderSKUReport(r.range);if(!report)return;const url=URL.createObjectURL(new Blob([inventoryCSV(report)],{type:'text/csv;charset=utf-8'})),a=document.createElement('a');a.href=url;a.download=`neeb20-demo-inventory-${report.range.from}-${report.range.to}.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
+function updateBrowserConnection(){if(!browserOnly)return;$('#browser-connection').textContent=navigator.onLine?'ออนไลน์ · ข้อมูลยังเก็บบนเครื่องนี้ ไม่ได้อัปโหลดไปเว็บ':'ออฟไลน์ · ใช้ข้อมูลบนเครื่องนี้ บันทึกใน IndexedDB ไม่ต้องต่อเซิร์ฟเวอร์';}
+async function initBrowserOnly(){
+ $('#browser-menu').hidden=false;$('#browser-nav').hidden=false;$('#export').textContent='สำรองข้อมูลลงไฟล์';$('#browser-backup-status').textContent=localStorage.getItem('neeb20:last-backup-at')?'โปรดตรวจไฟล์สำรองล่าสุดใน Files/iCloud Drive':'ยังไม่ได้สำรองข้อมูลจากเบราว์เซอร์นี้ แนะนำสำรองทุกวัน';updateBrowserConnection();window.addEventListener('online',updateBrowserConnection);window.addEventListener('offline',updateBrowserConnection);
+ document.addEventListener('visibilitychange',async()=>{if(document.hidden)return;tick();if(!busy&&!modal)try{state=await readState();render();}catch(e){setMessage(e.message);}});
+ if('serviceWorker' in navigator){try{const registration=await navigator.serviceWorker.register('/sw.js');$('#browser-offline-status').textContent=registration.active?'พร้อมเปิดแบบออฟไลน์จากไอคอนหน้าจอโฮม':'กำลังเตรียมออฟไลน์ กรุณาเปิดหน้านี้ออนไลน์ไว้สักครู่';navigator.serviceWorker.ready.then(()=>$('#browser-offline-status').textContent='พร้อมออฟไลน์แล้ว · Safari → แชร์ → เพิ่มไปยังหน้าจอโฮม');}catch{$('#browser-offline-status').textContent='ยังเตรียมออฟไลน์ไม่ได้ ต้องเปิดด้วย HTTPS หรือ localhost';}}
+}
+$('#browser-persist').onclick=async()=>{try{const granted=await navigator.storage?.persist?.();$('#browser-storage-status').textContent=granted?'เบราว์เซอร์อนุญาตเก็บข้อมูลถาวรขึ้น แต่ยังต้องสำรองไฟล์':'เบราว์เซอร์ไม่รับประกันเก็บข้อมูลถาวร โปรดสำรองไฟล์ และอย่าล้างข้อมูล Safari';}catch(e){$('#browser-storage-status').textContent=e.message;}};
+$('#browser-restore-form').onsubmit=async e=>{e.preventDefault();if(!browserOnly||busy||modal)return;const message=$('#browser-restore-error');try{
+ if(state.employees.find(e=>e.id===activeActor)?.role!=='manager')throw Error('เลือกผู้จัดการก่อนนำเข้าข้อมูล');const file=$('#browser-restore-file').files[0];if(!file)throw Error('เลือกไฟล์สำรองก่อน');if(file.size>100*1024*1024)throw Error('ไฟล์ใหญ่เกิน 100 MB');
+ const imported=await parseBrowserBackup(await file.text());if(!$('#browser-restore-confirm').checked)throw Error('ยืนยันว่าเครื่องนี้ยังไม่มีประวัติและต้องการนำเข้า');busy=true;const result=await browserDatabase.restore(imported,state.revision,$('#browser-restore-reason').value);state=result.state;$('#actor').innerHTML=state.employees.map(e=>`<option value="${escape(e.id)}">${escape(e.name)} (${escape(e.role)})</option>`).join('');if(!state.employees.some(e=>e.id===activeActor))activeActor=state.employees[0].id;$('#actor').value=activeActor;$('#report-employee').innerHTML='<option value="">พนักงานทุกคน</option>'+state.employees.map(e=>`<option value="${escape(e.id)}">${escape(e.name)}</option>`).join('');render();message.textContent='นำเข้าแล้ว เก็บประวัติเดิมครบ และบันทึกเหตุการณ์นำเข้าแล้ว';
+ }catch(e){message.textContent=e.message;}finally{busy=false;}};
 async function init(){try{
   state=await readState();const today=bangkokDay(appNow());$('#report-day').value=today;$('#report-month').value=today.slice(0,7);$('#report-week').value=isoWeek(today);$('#report-from').value=today;$('#report-to').value=today;$('#report-employee').innerHTML='<option value="">พนักงานทุกคน</option>'+state.employees.map(e=>`<option value="${escape(e.id)}">${escape(e.name)}</option>`).join('');$('#actor').innerHTML=state.employees.map(e=>`<option value="${escape(e.id)}">${escape(e.name)} (${e.role})</option>`).join('');
-  $('#mode').textContent=mode==='server-demo'?'SERVER DEMO · SQLite กลางบนเครื่องเซิร์ฟเวอร์ · หลายเครื่องต้องเปิดเซิร์ฟเวอร์เดียวกัน · บิลประจำ Session':'LOCAL DEMO · ทดลองหน้าจอเท่านั้น ยอดนี้ไม่ใช่ฐานรายได้ร้าน ใช้ Server Demo เพื่อเก็บข้อมูลถาวร ห้ามใช้รับเงินจริง';if(state.fixtureLabel)$('#mode').textContent+=' · '+state.fixtureLabel;render();
+  $('#mode').textContent=browserOnly?'BROWSER DEMO · ฐาน IndexedDB บน iPad/เบราว์เซอร์นี้เท่านั้น · ไม่ซิงก์เครื่องอื่น · บทบาทยังเป็น Demo · สำรองไฟล์ทุกวัน':mode==='server-demo'?'SERVER DEMO · SQLite กลางบนเครื่องเซิร์ฟเวอร์ · หลายเครื่องต้องเปิดเซิร์ฟเวอร์เดียวกัน · บิลประจำ Session':'LOCAL DEMO · ทดลองหน้าจอเท่านั้น ยอดนี้ไม่ใช่ฐานรายได้ร้าน ใช้ Server Demo เพื่อเก็บข้อมูลถาวร ห้ามใช้รับเงินจริง';if(state.fixtureLabel)$('#mode').textContent+=' · '+state.fixtureLabel;render();if(browserOnly)await initBrowserOnly();
   const pending=JSON.parse(sessionStorage.getItem(PENDING_KEY)||'null');if(pending){if(state.commands.some(c=>c.id===pending.command.id)){sessionStorage.removeItem(PENDING_KEY);setMessage('คำสั่งก่อนรีเฟรชบันทึกสำเร็จแล้ว ไม่บันทึกซ้ำ');}else{showDialog('ตรวจสอบคำสั่งค้างจากก่อนรีเฟรช',`<p>ส่งคำสั่งเดิมเท่านั้น เพื่อป้องกันรับเงินซ้ำ</p><pre>${escape(JSON.stringify(pending.command,null,2))}</pre>`,pending.command.type,()=>pending.command.payload);Object.assign(modal,{id:pending.command.id,revision:pending.command.expectedRevision,actorId:pending.actorId,pending:pending.command});$('#cancel-dialog').disabled=true;}}
   setInterval(tick,1000);setInterval(async()=>{if(busy||modal)return;try{const latest=await readState();if(latest.revision!==state.revision){state=latest;render();}}catch{setMessage('ติดต่อแหล่งข้อมูลไม่ได้ อย่ารับเงินจริง ตรวจการเชื่อมต่อก่อนทำรายการ');}},2000);
 }catch(e){setMessage(`เปิดข้อมูลไม่ได้: ${e.message} · ข้อมูลเดิมไม่ได้ถูกล้าง กรุณาสำรองข้อมูลและตรวจสอบก่อน`);document.querySelectorAll('button').forEach(b=>b.disabled=true);}}

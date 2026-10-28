@@ -1,0 +1,21 @@
+# FREE STATIC SITE ONLY. No Node web service, paid instance, persistent disk or database.
+services:
+  - type: web
+    name: neeb20-ipad
+    runtime: static
+    branch: neeb20/prototype-demo
+    buildCommand: node scripts/build-static.js
+    staticPublishPath: ./static-site
+    headers:
+      - path: /*
+        name: Cache-Control
+        value: no-store
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: Referrer-Policy
+        value: same-origin
+      - path: /*
+        name: Content-Security-Policy
+        value: "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; connect-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'; manifest-src 'self'"
